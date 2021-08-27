@@ -147,7 +147,11 @@ exclude_kb.pack(side=RIGHT)
 
 # vsTitle is set to global so that it's updated automatically when you change VULNSIGS version.
 global vsTitle
-vsText = "VulnSigs Sandbox: " + keyring.get_password("QIDentifier.VS_VER", "VS")
+if keyring.get_password("QIDentifier.VS_VER", "VS") == None:
+    vsText = "VulnSigs Sandbox: VERSION NOT CONFIGURED"
+elif keyring.get_password("QIDentifier.VS_VER", "VS") != "":
+    vsText = "VulnSigs Sandbox: " + keyring.get_password("QIDentifier.VS_VER", "VS")
+
 vsTitle = Label(midframe, text=vsText, font=arialbold)
 vsTitle.pack(side=LEFT)
 
