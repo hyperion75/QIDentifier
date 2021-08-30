@@ -1,5 +1,5 @@
 #custom
-testing.py
+testing*.py
 .DS_Store
 .idea/
 __pycache__/
