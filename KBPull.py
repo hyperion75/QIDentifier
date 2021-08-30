@@ -29,7 +29,6 @@ def pullkb(qid):
     soup = BeautifulSoup(response.content, 'html.parser')
 
     # Pull parsed KB info and convert to variables for UI display
-    # Known Bug: QIDs without one of the tags below will cause the UI to return no output
     attrlist = []
     kb_attributes = ['vuln_type', 'severity_level', 'title', 'category', 'last_service_modification_datetime',
                      'published_datetime', 'patchable', 'product', 'vendor', 'vendor_reference', 'diagnosis',

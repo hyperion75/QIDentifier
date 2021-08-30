@@ -1,6 +1,6 @@
-from PullSigs import pullsigs
-from KBPull import pullkb
-from vspull import vspull
+import PullSigs
+import KBPull
+import vspull
 from tkinter import *
 import base64
 import keyring
@@ -22,6 +22,19 @@ def set_vs_version(ver):
     version = ver.get()
     keyring.set_password("QIDentifier.VS_VER", "VS", version)
     vsTitle.config(text="VulnSigs Sandbox: " + version)
+
+#Started work on a button to switch between QID/CVE search methods
+"""def searchmethod(x):
+    global sm
+    if x == 0:
+        switchbuttonx.config(text="CVE:")
+        sm = 1
+        print("Searchmethod set to " + str(sm))
+    elif x == 1:
+        switchbuttonx.config(text="QID:")
+        sm = 0
+        print("Searchmethod set to " + str(sm))
+    #searchmethod = Button(topframe, text="QID:", bg='#FFFFFF', font=arialheader, command=searchmethod())"""
 
 # 2 functions - Set the POD in keychain, then set the API login string in keychain.
 def buildbase64(username, password, pod):
@@ -88,7 +101,7 @@ def vsupdatepopup():
     instruction_label = Label(vsuwindow, text="Select a VulnSigs Version:")
     instruction_label.pack()
 
-    versiontuple = tuple(vspull())
+    versiontuple = tuple(vspull.vspull())
     ver = StringVar()
     ver_entry = ttk.Combobox(vsuwindow, width = 27, textvariable = ver)
     ver_entry['values'] = versiontuple
@@ -106,10 +119,10 @@ def pullinfo():
     vs_output.delete(1.0,END)
     kb_output.delete(1.0,END)
     # Display Sandbox Information
-    vs_display = pullsigs(qid)
+    vs_display = PullSigs.pullsigs(qid)
     # Display KB Information (if checkbox unchecked)
     if exclude_kb_on.get()==0:
-        kb_display = pullkb(qid)
+        kb_display = KBPull.pullkb(qid)
         kb_output.insert(END, kb_display)
     vs_output.insert(END, vs_display)
 
@@ -132,13 +145,14 @@ arialbold = ("Arial", 12, "bold")
 arial = ("Arial", 12)
 
 #UI Elements
-enterqid = Label(topframe, text="QID:", font=arialheader)
-enterqid.pack(side=LEFT)
+#sm = 0
+switchbuttonx = Label(topframe, text="QID:", bg='#FFFFFF', font=arialheader)
+switchbuttonx.pack(side=LEFT)
 
-qidInput = Entry(topframe, width=10)
+qidInput = Entry(topframe, width=12)
 qidInput.pack(side=LEFT)
 
-btn_retrieve = Button(topframe, text="Retrieve Information",
+btn_retrieve = Button(topframe, text="Go",
              fg="orange red", command=pullinfo, font=arial)
 btn_retrieve.pack(side=LEFT)
 

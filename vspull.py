@@ -22,6 +22,6 @@ def vspull():
         versionlist.append(x.get_text())
     return versionlist
 
-vspull()
+
 
 
