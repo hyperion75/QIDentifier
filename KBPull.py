@@ -2,19 +2,37 @@ from bs4 import BeautifulSoup
 import keyring
 import requests as requests
 import re
+import base64
 
 #scrubs HTML tags from KB output
 TAG_RE = re.compile(r'<[^>]+>')
 def remove_tags(text):
     return TAG_RE.sub('', text)
 
+def base64encoder():
+    username = keyring.get_password("QIDentifier.USER", "QIDer")
+    password = keyring.get_password("QIDentifier.PASS", "QIDer")
+    message = username + ":" + password
+    message_bytes = message.encode('ascii')
+    base64_bytes = base64.b64encode(message_bytes)
+    base64_encoded = base64_bytes.decode('ascii')
+    return base64_encoded
+
+def geturl():
+    pod = keyring.get_password("QIDentifier.POD", "QIDer")
+    if pod == '1':
+        url = 'https://qualysapi.qualys.com/api/2.0/fo/knowledge_base/vuln/'
+    elif pod == '2':
+        url = 'https://qualysapi.qg2.apps.qualys.com/api/2.0/fo/knowledge_base/vuln/'
+    elif pod == '3':
+        url = 'https://qualysapi.qg3.apps.qualys.com/api/2.0/fo/knowledge_base/vuln/'
+        print('DING!')
+    return url
 
 #Connects to Qualys API and runs Knowledgebase query for provided QID.
 #Credentials / POD can be changed from UI and are stored in system keychain.
 def pullkb(qid):
-    base64 = keyring.get_password("QIDentifier", "API")
-    url = keyring.get_password("QIDentifier.API_URL","API")
-    authstring = "Basic " + base64
+    authstring = "Basic " + base64encoder()
     payload = {'action': 'list',
                'details': 'All',
                'ids': qid}
@@ -23,7 +41,7 @@ def pullkb(qid):
         'Authorization': authstring,
     }
 
-    response = requests.request("POST", url, headers=headers, data=payload)
+    response = requests.request("POST", geturl(), headers=headers, data=payload)
     kb_querystatus = response.status_code
     print(kb_querystatus)
     soup = BeautifulSoup(response.content, 'html.parser')

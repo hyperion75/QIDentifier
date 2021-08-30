@@ -37,7 +37,27 @@ def set_vs_version(ver):
     #searchmethod = Button(topframe, text="QID:", bg='#FFFFFF', font=arialheader, command=searchmethod())"""
 
 # 2 functions - Set the POD in keychain, then set the API login string in keychain.
-def buildbase64(username, password, pod):
+
+def storecredentials(username, password, pod):
+    s_pod = pod.get()
+    username = username.get()
+    password = password.get()
+    print(s_pod)
+    print(username)
+    print(password)
+    if s_pod == ' US POD 1':
+        platform = '1'
+    elif s_pod == ' US POD 2':
+        platform = '2'
+    elif s_pod == ' US POD 3':
+        platform = '3'
+    keyring.set_password("QIDentifier.POD", "QIDer", platform)
+    keyring.set_password("QIDentifier.USER", "QIDer", username)
+    keyring.set_password("QIDentifier.PASS", "QIDer", password)
+
+# Changed behavior of User/Pass/POD variable storage for added flexibility with new features.
+# Encoding functionality moved to KBPull.py.
+"""def buildbase64(username, password, pod):
     s_pod = pod.get()
     if s_pod == ' US POD 1':
         url = 'https://qualysapi.qualys.com/api/2.0/fo/knowledge_base/vuln/'
@@ -52,7 +72,7 @@ def buildbase64(username, password, pod):
     message_bytes = message.encode('ascii')
     base64_bytes = base64.b64encode(message_bytes)
     base64_encode = base64_bytes.decode('ascii')
-    keyring.set_password("QIDentifier", "API", base64_encode)
+    keyring.set_password("QIDentifier", "API", base64_encode)"""
 
 #Popup window for POD Selection / API Login
 def loginpopup():
@@ -86,7 +106,7 @@ def loginpopup():
     password_entry.pack()
 
     login_confirm = Button(loginwindow, text="Set Credentials", width=12, height=1,
-                           command=lambda : buildbase64(username, password, pod))
+                           command=lambda : storecredentials(username, password, pod))
     login_confirm.pack()
     okbutton = Button(loginwindow, text="OK", width=10, height=1, command=lambda : closewindow(loginwindow))
     okbutton.pack()
