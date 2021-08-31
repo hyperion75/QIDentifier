@@ -26,7 +26,6 @@ def geturl():
         url = 'https://qualysapi.qg2.apps.qualys.com/api/2.0/fo/knowledge_base/vuln/'
     elif pod == '3':
         url = 'https://qualysapi.qg3.apps.qualys.com/api/2.0/fo/knowledge_base/vuln/'
-        print('DING!')
     return url
 
 #Connects to Qualys API and runs Knowledgebase query for provided QID.
