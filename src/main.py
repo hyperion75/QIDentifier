@@ -1,23 +1,35 @@
 from tkinter import *
 from tkinter import ttk
-
 import keyring
-
 import KBPull
 import PullSigs
 import vspull
 
 # create root window
 root = Tk()
-root.eval('tk::PlaceWindow . center')
 root.title("QIDentifier")
 root.geometry('1280x720')
-root.tk.call("source", "sun-valley.tcl")
+
+def centerwindow(win):
+    win.update_idletasks()
+    width = win.winfo_width()
+    frm_width = win.winfo_rootx() - win.winfo_x()
+    win_width = width + 2 * frm_width
+    height = win.winfo_height()
+    titlebar_height = win.winfo_rooty() - win.winfo_y()
+    win_height = height + titlebar_height + frm_width
+    x = win.winfo_screenwidth() // 2 - win_width // 2
+    y = win.winfo_screenheight() // 2 - win_height // 2
+    win.geometry('{}x{}+{}+{}'.format(width, height, x, y))
+    win.deiconify()
+
+centerwindow(root)
+
+root.tk.call("source", "src/sun-valley.tcl")
 root.tk.call("set_theme", "light")
 
 # Required for checkbox functionality
 exclude_kb_on = BooleanVar()
-
 
 def closewindow(x):
     x.destroy()
@@ -64,10 +76,10 @@ def storecredentials(username, password, pod):
 # Popup window for POD Selection / API Login
 def settingspane():
     settings = Toplevel(root)
-    root.eval(f'tk::PlaceWindow {str(settings)} center')
     settings.title("QIDentifier Settings")
     settings.geometry("750x285")
     settings.resizable(False, False)
+    centerwindow(settings)
 
     # settings UI positioning
     credentialframe = ttk.LabelFrame(settings, text="API Credentials", padding=(20,10))
