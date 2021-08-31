@@ -25,10 +25,13 @@ def pullsigs(qid):
     parsed = list(soup.find_all('div', class_='panel-body'))
     list_sig = []
     list_func = []
-    substring = "qlua_func"
+    substring1 = "qlua_func"
+    substring2 = "qlua_dfunc"
     for x in parsed:
-        #siglist.append(x.get_text() + '\n' + "================")
-        if str(x).find(substring) != -1:
+        #.find() doesn't support lists, I'll have to switch this around to use another method sometime.
+        if str(x).find(substring1) != -1:
+            list_func.append(x.get_text() + '\n' + "================================")
+        elif str(x).find(substring2) != -1:
             list_func.append(x.get_text() + '\n' + "================================")
         else:
             list_sig.append(x.get_text() + '\n' + "================================")

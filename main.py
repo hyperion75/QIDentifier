@@ -1,13 +1,11 @@
-import threading
-import tkinter.font as tkFont
-from tkinter import ttk
-import PullSigs
-import KBPull
-import vspull
 from tkinter import *
-import base64
+from tkinter import ttk
+
 import keyring
-import time
+
+import KBPull
+import PullSigs
+import vspull
 
 # create root window
 root = Tk()

@@ -1,5 +1,6 @@
 #custom
 testing*.py
+setup.py
 .DS_Store
 .idea/
 __pycache__/
