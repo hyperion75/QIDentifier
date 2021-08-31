@@ -1,3 +1,4 @@
+import threading
 import tkinter.font as tkFont
 from tkinter import ttk
 import PullSigs
@@ -6,6 +7,7 @@ import vspull
 from tkinter import *
 import base64
 import keyring
+import time
 
 # create root window
 root = Tk()
@@ -42,7 +44,6 @@ def set_vs_version(ver):
         print("Searchmethod set to " + str(sm))
     #searchmethod = ttk.Button(topframe, text="QID:", bg='#FFFFFF', font=arialheader, command=searchmethod())"""
 
-
 # 2 functions - Set the POD in keychain, then set the API login string in keychain.
 
 def storecredentials(username, password, pod):
@@ -61,27 +62,6 @@ def storecredentials(username, password, pod):
     keyring.set_password("QIDentifier.POD", "QIDer", platform)
     keyring.set_password("QIDentifier.USER", "QIDer", username)
     keyring.set_password("QIDentifier.PASS", "QIDer", password)
-
-
-# Changed behavior of User/Pass/POD variable storage for added flexibility with new features.
-# Encoding functionality moved to KBPull.py.
-"""def buildbase64(username, password, pod):
-    s_pod = pod.get()
-    if s_pod == ' US POD 1':
-        url = 'https://qualysapi.qualys.com/api/2.0/fo/knowledge_base/vuln/'
-    elif s_pod == ' US POD 2':
-        url = 'https://qualysapi.qg2.apps.qualys.com/api/2.0/fo/knowledge_base/vuln/'
-    elif s_pod == ' US POD 3':
-        url = 'https://qualysapi.qg3.apps.qualys.com/api/2.0/fo/knowledge_base/vuln/'
-    keyring.set_password("QIDentifier.API_URL", "API", url)
-
-
-    message = username.get() + ":" + password.get()
-    message_bytes = message.encode('ascii')
-    base64_bytes = base64.b64encode(message_bytes)
-    base64_encode = base64_bytes.decode('ascii')
-    keyring.set_password("QIDentifier", "API", base64_encode)"""
-
 
 # Popup window for POD Selection / API Login
 def settingspane():
@@ -142,15 +122,27 @@ def settingspane():
 # Executed when user clicks the "retrieve information" button. This does all the work.
 def pullinfo():
     qid = qidInput.get()
-    vs_output.delete(1.0, END)
-    kb_output.delete(1.0, END)
-    # Display Sandbox Information
-    vs_display = PullSigs.pullsigs(qid)
+
+    #Clear old information from leftbook and rightbook
+    vso_sigs.delete(1.0, END)
+    kbo_main.delete(1.0, END)
+    kbo_threat.delete(1.0, END)
+    kbo_solution.delete(1.0, END)
+    kbo_cve.delete(1.0, END)
+
     # Display KB Information (if checkbox unchecked)
+    #pulls tab data to rightbook
     if exclude_kb_on.get() == 0:
-        kb_display = KBPull.pullkb(qid)
-        kb_output.insert(END, kb_display)
-    vs_output.insert(END, vs_display)
+        main, threat, solution, cve = KBPull.pullkb(qid)
+        kbo_main.insert(END, main)
+        kbo_threat.insert(END, threat)
+        kbo_solution.insert(END, solution)
+        kbo_cve.insert(END, cve)
+
+    #pulls tab data to leftbook
+    sigs, funcs = PullSigs.pullsigs(qid)
+    vso_sigs.insert(END, sigs)
+    vso_funcs.insert(END, funcs)
 
 
 # Everything below this is UI position related
@@ -209,19 +201,68 @@ for index in [0, 1]:
     lb_tab1.rowconfigure(index=index, weight=1)
 leftbook.add(lb_tab1, text="Signatures")
 
-vs_output = Text(lb_tab1, font=arial)
-vs_output.pack(side=LEFT, expand=True, fill=BOTH)
+vso_sigs = Text(lb_tab1, font=arial, wrap=WORD)
+vso_sigs.pack(expand=True, fill=BOTH)
 
 #VULNSIGS notebook, functions page
 lb_tab2 = ttk.Frame(leftbook)
 leftbook.add(lb_tab2, text="Functions")
+vso_funcs = Text(lb_tab2, font=arial, wrap=WORD)
+vso_funcs.pack(expand=True, fill=BOTH)
 
-kb_output = Text(bottomframe, bg="gainsboro", font=arial)
-kb_output.pack(side=RIGHT, expand=True, fill=BOTH)
-kb_output.insert(END, "Pulling KB information may take some time.\n\nIf you don't need it, check the box above.")
+#define KB Output Notebook
+rightbook = ttk.Notebook(bottomframe)
+rightbook.pack(side=LEFT, fill=BOTH, expand=True)
+
+#KBO Notebook, main page
+rb_tab1 = ttk.Frame(rightbook)
+for index in [0, 1]:
+    rb_tab1.columnconfigure(index=index, weight=1)
+    rb_tab1.rowconfigure(index=index, weight=1)
+rightbook.add(rb_tab1, text="General")
+
+kbo_main = Text(rb_tab1, font=arial, wrap=WORD)
+kbo_main.pack(expand=True, fill=BOTH)
+kbo_main.insert(END, "Pulling KB information may take some time.\n\nIf you don't need it, enable the setting above.")
+
+#KBO Notebook, threat page
+rb_tab2 = ttk.Frame(rightbook)
+rightbook.add(rb_tab2, text="Threat")
+kbo_threat = Text(rb_tab2, font=arial, wrap=WORD)
+kbo_threat.pack(expand=True, fill=BOTH)
+kbo_threat.insert(END, "Pulling KB information may take some time.\n\nIf you don't need it, enable the setting above.")
+
+#KBO Notebook, solution page
+rb_tab3 = ttk.Frame(rightbook)
+rightbook.add(rb_tab3, text="Solution")
+kbo_solution = Text(rb_tab3, font=arial, wrap=WORD)
+kbo_solution.pack(expand=True, fill=BOTH)
+kbo_solution.insert(END, "Pulling KB information may take some time.\n\nIf you don't need it, enable the setting above.")
+
+#KBO Notebook, CVE page
+rb_tab4 = ttk.Frame(rightbook)
+rightbook.add(rb_tab4, text="CVE")
+kbo_cve = Text(rb_tab4, font=arial, wrap=WORD)
+kbo_cve.pack(expand=True, fill=BOTH)
+kbo_cve.insert(END, "Pulling KB information may take some time.\n\nIf you don't need it, enable the setting above.")
+
+"""def loadstart():
+    def true_loadstart():
+        loadingindicator.pack(side=LEFT)
+        loadingindicator.start()
+        time.sleep(5)
+        loadingindicator.stop()
+        loadingindicator.grid_forget()
+
+        settings['state']='normal'
+
+    settings['state']='disabled'
+    threading.Thread(target=true_loadstart, args=(1,)).start()"""
 
 settings = ttk.Button(footerframe, text="Settings", command=lambda: settingspane())
 settings.pack(side=RIGHT)
+
+#loadingindicator = ttk.Progressbar(footerframe, orient='horizontal', mode='indeterminate', length=100)
 
 # Execute Tkinter
 root.mainloop()

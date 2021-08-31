@@ -23,11 +23,20 @@ def pullsigs(qid):
     soup = BeautifulSoup(response.content, 'html.parser')
 
     parsed = list(soup.find_all('div', class_='panel-body'))
-    siglist = []
+    list_sig = []
+    list_func = []
+    substring = "qlua_func"
     for x in parsed:
-        siglist.append(x.get_text() + '\n' + "================")
-    sigs = '\n\n'.join(siglist)
+        #siglist.append(x.get_text() + '\n' + "================")
+        if str(x).find(substring) != -1:
+            list_func.append(x.get_text() + '\n' + "================================")
+        else:
+            list_sig.append(x.get_text() + '\n' + "================================")
+    #sigs = '\n\n'.join(siglist)
 
-    if response.status_code != 200:
-        sigs = 'Connection Error'
-    return sigs
+    sigs = '\n\n'.join(list_sig)
+    funcs = '\n\n'.join(list_func)
+
+    return sigs, funcs
+
+
