@@ -5,6 +5,7 @@ import KBPull
 import PullSigs
 import vspull
 import os
+import sys
 
 os.chdir(os.path.dirname(sys.argv[0]))
 
