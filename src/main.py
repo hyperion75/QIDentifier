@@ -4,6 +4,13 @@ import keyring
 import KBPull
 import PullSigs
 import vspull
+import os
+
+# Get the current working directory
+cwd = os.getcwd()
+# Print the current working directory
+print("Current working directory: {0}".format(cwd))
+print("Current script directory:" + os.path.realpath(__file__))
 
 # create root window
 root = Tk()
@@ -24,6 +31,7 @@ def centerwindow(win):
     win.deiconify()
 
 centerwindow(root)
+
 
 root.tk.call("source", "sun-valley.tcl")
 root.tk.call("set_theme", "light")
