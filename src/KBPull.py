@@ -97,9 +97,12 @@ def pullkb(qid):
     if isinstance(attrlist[9], str):
         list_main.append("Vendor Reference: " + remove_tags(attrlist[9]))
     list_cve.append(kb_cve_list)
-    list_threat.append(remove_tags(attrlist[10]))
-    list_threat.append("Consequence: " + remove_tags(attrlist[11]))
-    list_solution.append(remove_tags(attrlist[12]))
+    if isinstance(attrlist[10], str):
+        list_threat.append(remove_tags(attrlist[10]))
+    if isinstance(attrlist[11], str):
+        list_threat.append("Consequence: " + remove_tags(attrlist[11]))
+    if isinstance(attrlist[12], str):
+        list_solution.append(remove_tags(attrlist[12]))
     solutionlinks = BeautifulSoup(attrlist[12], 'lxml')
     for x in solutionlinks.find_all('a', href=True):
         list_solution.append('* ' + x['href'])
