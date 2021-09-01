@@ -94,7 +94,8 @@ def pullkb(qid):
         list_main.append("Patchable: No")
     list_main.append("Vendor: " + attrlist[8].capitalize())
     list_main.append("Product: " + attrlist[7].capitalize())
-    list_main.append("Vendor Reference: " + remove_tags(attrlist[9]))
+    if isinstance(attrlist[9], str):
+        list_main.append("Vendor Reference: " + remove_tags(attrlist[9]))
     list_cve.append(kb_cve_list)
     list_threat.append(remove_tags(attrlist[10]))
     list_threat.append("Consequence: " + remove_tags(attrlist[11]))
