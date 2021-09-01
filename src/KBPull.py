@@ -52,9 +52,9 @@ def pullkb(qid):
                      'consequence', 'solution', 'remote']
     for attr in kb_attributes:
         x = soup.find(attr)
-        if x != "":
+        if x != None:
             attrlist.append(x.get_text())
-        elif x == "":
+        elif x == None:
             attrlist.append(x)
 
 
