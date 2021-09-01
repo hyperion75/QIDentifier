@@ -103,9 +103,9 @@ def pullkb(qid):
         list_threat.append("Consequence: " + remove_tags(attrlist[11]))
     if isinstance(attrlist[12], str):
         list_solution.append(remove_tags(attrlist[12]))
-    solutionlinks = BeautifulSoup(attrlist[12], 'lxml')
-    for x in solutionlinks.find_all('a', href=True):
-        list_solution.append('* ' + x['href'])
+        solutionlinks = BeautifulSoup(attrlist[12], 'lxml')
+        for x in solutionlinks.find_all('a', href=True):
+            list_solution.append('* ' + x['href'])
     list_threat.append("Threat Identifiers: " + '\n' + kb_threat_intel)
     if attrlist[13] == '1':
         list_main.append("Authentication Not Required")
