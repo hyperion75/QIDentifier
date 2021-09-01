@@ -4,6 +4,9 @@ import keyring
 import KBPull
 import PullSigs
 import vspull
+import os
+
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # create root window
 root = Tk()
@@ -24,6 +27,7 @@ def centerwindow(win):
     win.deiconify()
 
 centerwindow(root)
+
 
 root.tk.call("source", "sun-valley.tcl")
 root.tk.call("set_theme", "light")
