@@ -25,7 +25,7 @@ def centerwindow(win):
 
 centerwindow(root)
 
-root.tk.call("source", "src/sun-valley.tcl")
+root.tk.call("source", "sun-valley.tcl")
 root.tk.call("set_theme", "light")
 
 # Required for checkbox functionality
