@@ -5,15 +5,8 @@ import KBPull
 import PullSigs
 import vspull
 import os
-import sys
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
-# Get the current working directory
-cwd = os.getcwd()
-# Print the current working directory
-print("Current working directory: {0}".format(cwd))
-print("Current script directory:" + os.path.realpath(__file__))
 
 # create root window
 root = Tk()
