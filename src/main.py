@@ -8,6 +8,14 @@ import os
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
+#Useful for working directory troubleshooting:
+cwd = os.getcwd()
+print("Current working directory: {0}".format(cwd))
+print("Current script directory:" + os.path.realpath(__file__))
+files = [f for f in os.listdir('.') if os.path.isfile(f)]
+for f in files:
+    print(f)
+
 # create root window
 root = Tk()
 root.title("QIDentifier")
