@@ -7,7 +7,7 @@ import vspull
 import os
 import sys
 
-os.chdir(os.path.dirname(sys.argv[0]))
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # Get the current working directory
 cwd = os.getcwd()
