@@ -6,6 +6,8 @@ import PullSigs
 import vspull
 import os
 
+os.chdir(os.path.dirname(sys.argv[0]))
+
 # Get the current working directory
 cwd = os.getcwd()
 # Print the current working directory
