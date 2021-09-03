@@ -3,11 +3,20 @@ import keyring
 import requests as requests
 import re
 import base64
+import enlighten
+import math
+import warnings
 
-#scrubs HTML tags from KB output
+global MANAGER
+
+# scrubs HTML tags from KB output
 TAG_RE = re.compile(r'<[^>]+>')
+warnings.filterwarnings("ignore", message='Unverified HTTPS request is being made')
+
+
 def remove_tags(text):
     return TAG_RE.sub('', text)
+
 
 def base64encoder():
     username = keyring.get_password("QIDentifier.USER", "QIDer")
@@ -17,6 +26,7 @@ def base64encoder():
     base64_bytes = base64.b64encode(message_bytes)
     base64_encoded = base64_bytes.decode('ascii')
     return base64_encoded
+
 
 def geturl():
     pod = keyring.get_password("QIDentifier.POD", "QIDer")
@@ -28,8 +38,9 @@ def geturl():
         url = 'https://qualysapi.qg3.apps.qualys.com/api/2.0/fo/knowledge_base/vuln/'
     return url
 
-#Connects to Qualys API and runs Knowledgebase query for provided QID.
-#Credentials / POD can be changed from UI and are stored in system keychain.
+
+# Connects to Qualys API and runs Knowledgebase query for provided QID.
+# Credentials / POD can be changed from UI and are stored in system keychain.
 def pullkb(qid):
     authstring = "Basic " + base64encoder()
     payload = {'action': 'list',
@@ -40,12 +51,26 @@ def pullkb(qid):
         'Authorization': authstring,
     }
 
-    response = requests.request("POST", geturl(), headers=headers, data=payload)
+    response = requests.request("POST", geturl(), headers=headers, data=payload, stream=True)
     kb_querystatus = response.status_code
     print(kb_querystatus)
-    soup = BeautifulSoup(response.content, 'html.parser')
 
-    # Pull parsed KB info and convert to variables for UI display
+    # monitor API download live in console. tracks data being imported from API to parsefile.kb
+    parsefile = 'parsefile.kb'
+    MANAGER = enlighten.get_manager()
+
+    assert response.status_code == 200, response.status_code
+    dlen = int(response.headers.get('Content-Length', 0)) or None
+
+    with MANAGER.counter(color='green', total=dlen and math.ceil(dlen / 2 ** 20), unit='MiB', leave=False) as ctr, \
+            open(parsefile, 'wb', buffering=2 ** 24) as f:
+        for chunk in response.iter_content(chunk_size=2 ** 20):
+            print(chunk[-16:].hex().upper())
+            f.write(chunk)
+            ctr.update()
+
+    # Pull parsed KB info from parsefile.kb and convert to variables for UI display
+    soup = BeautifulSoup(open('parsefile.kb'), 'html.parser')
     attrlist = []
     kb_attributes = ['vuln_type', 'severity_level', 'title', 'category', 'last_service_modification_datetime',
                      'published_datetime', 'patchable', 'product', 'vendor', 'vendor_reference', 'diagnosis',
@@ -56,7 +81,6 @@ def pullkb(qid):
             attrlist.append(x.get_text())
         elif x == None:
             attrlist.append(x)
-
 
     cvelist = []
     kb_cve_list_pre = soup.find_all('cve')
@@ -75,8 +99,6 @@ def pullkb(qid):
     for x in kb_auth_type_pre:
         authlist.append('* ' + x.get_text())
     kb_auth_type = '\n'.join(authlist)
-
-    print(attrlist)
 
     list_main = []
     list_threat = []
@@ -113,10 +135,8 @@ def pullkb(qid):
         list_main.append("Authentication Required")
         list_main.append("Supported Authentication: " + '\n' + kb_auth_type)
 
-
     main = '\n\n'.join(list_main)
     threat = '\n\n'.join(list_threat)
     solution = '\n\n'.join(list_solution)
     cve = '\n\n'.join(list_cve)
     return (main, threat, solution, cve)
-

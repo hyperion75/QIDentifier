@@ -1,4 +1,5 @@
 #custom
+parsefile.kb
 setup.py
 testing*.py
 src/setup.py
