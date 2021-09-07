@@ -54,17 +54,16 @@ def set_vs_version(ver):
 
 
 # Started work on a button to switch between QID/CVE search methods
-"""def searchmethod(x):
+def searchmethod(x):
     global sm
     if x == 0:
-        switchbuttonx.config(text="CVE:")
+        switchbuttonx.config(text="CVE")
         sm = 1
         print("Searchmethod set to " + str(sm))
     elif x == 1:
-        switchbuttonx.config(text="QID:")
+        switchbuttonx.config(text="QID")
         sm = 0
         print("Searchmethod set to " + str(sm))
-    #searchmethod = ttk.Button(topframe, text="QID:", bg='#FFFFFF', font=arialheader, command=searchmethod())"""
 
 # 2 functions - Set the POD in keychain, then set the API login string in keychain.
 
@@ -186,18 +185,17 @@ arialbold = ("Arial", 12, "bold")
 arial = ("Arial", 12)
 
 # UI Elements
-# sm = 0
-switchbuttonx = ttk.Label(topframe, text="QID:", font=arialheader)
-switchbuttonx.pack(side=LEFT, padx=5)
+label_search = ttk.Label(topframe, text="Search:", font=arialheader)
+label_search.pack(side=LEFT, padx=5)
+sm = 0
+switchbuttonx = ttk.Button(topframe, text="QID", command=lambda: searchmethod(sm))
+switchbuttonx.pack(side=LEFT)
 
 qidInput = ttk.Entry(topframe, width=12)
-qidInput.pack(side=LEFT, padx=5)
+qidInput.pack(side=LEFT)
 
 btn_retrieve = ttk.Button(topframe, text="Go", command=pullinfo)
-btn_retrieve.pack(side=LEFT)
-
-exclude_kb = ttk.Checkbutton(topframe, text="Exclude KB Info", variable=exclude_kb_on, style="Switch.TCheckbutton")
-exclude_kb.pack(side=RIGHT)
+btn_retrieve.pack(side=LEFT, padx=15)
 
 # vsTitle is set to global so that it's updated automatically when you change VULNSIGS version.
 global vsTitle
@@ -268,23 +266,11 @@ kbo_cve = Text(rb_tab4, font=arial, wrap=WORD)
 kbo_cve.pack(expand=True, fill=BOTH)
 kbo_cve.insert(END, "Pulling KB information may take some time.\n\nIf you don't need it, enable the setting above.")
 
-"""def loadstart():
-    def true_loadstart():
-        loadingindicator.pack(side=LEFT)
-        loadingindicator.start()
-        time.sleep(5)
-        loadingindicator.stop()
-        loadingindicator.grid_forget()
-
-        settings['state']='normal'
-
-    settings['state']='disabled'
-    threading.Thread(target=true_loadstart, args=(1,)).start()"""
-
 settings = ttk.Button(footerframe, text="Settings", command=lambda: settingspane())
 settings.pack(side=RIGHT)
 
-#loadingindicator = ttk.Progressbar(footerframe, orient='horizontal', mode='indeterminate', length=100)
+exclude_kb = ttk.Checkbutton(footerframe, text="Exclude KB Info", variable=exclude_kb_on, style="Switch.TCheckbutton")
+exclude_kb.pack(side=RIGHT)
 
 # Execute Tkinter
 root.mainloop()

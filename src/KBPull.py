@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+from threading import Thread
 import keyring
 import requests as requests
 import re
@@ -44,8 +45,8 @@ def geturl():
 def pullkb(qid):
     authstring = "Basic " + base64encoder()
     payload = {'action': 'list',
-               'details': 'All',
-               'ids': qid}
+                'details': 'All',
+                'ids': qid}
     headers = {
         'X-Requested-With': 'QualysPostman',
         'Authorization': authstring,
@@ -68,7 +69,10 @@ def pullkb(qid):
             print(chunk[-16:].hex().upper())
             f.write(chunk)
             ctr.update()
+    main, threat, solution, cve = parsekb()
+    return main, threat, solution, cve
 
+def parsekb():
     # Pull parsed KB info from parsefile.kb and convert to variables for UI display
     soup = BeautifulSoup(open('parsefile.kb'), 'html.parser')
     attrlist = []
