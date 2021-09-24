@@ -1,9 +1,10 @@
 from tkinter import *
 from tkinter import ttk
+import requests
+from bs4 import BeautifulSoup
 import keyring
 import KBPull
 import PullSigs
-import vspull
 import os
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -52,6 +53,24 @@ def set_vs_version(ver):
     keyring.set_password("QIDentifier.VS_VER", "VS", version)
     vsTitle.config(text="VulnSigs Sandbox: " + version)
 
+def list_vs_versions():
+    url = "https://10.80.8.21/"
+    headers = {
+        'Connection': 'keep-alive',
+        'Accept': '*/*',
+        'Accept-Encoding': 'gzip,deflate,br',
+        'Accept-Language': 'en-US,en;q=0.9'
+    }
+    response = requests.request("GET", url, headers=headers, verify=False)
+    print(response.status_code)
+
+    soup = BeautifulSoup(response.content, 'html.parser')
+
+    parsed = list(soup.find_all('option'))
+    versionlist = []
+    for x in parsed:
+        versionlist.append(x.get_text())
+    return versionlist
 
 # Started work on a button to switch between QID/CVE search methods
 def searchmethod(x):
@@ -131,7 +150,7 @@ def settingspane():
     instruction_label_vs = ttk.Label(vulnsigsframe, text="VULNSIGS Version:")
     instruction_label_vs.grid(row=0, column=0, pady=15, padx=10)
 
-    versiontuple = tuple(vspull.vspull())
+    versiontuple = tuple(list_vs_versions())
     ver = StringVar()
     ver_entry = ttk.Combobox(vulnsigsframe, width=20, textvariable=ver)
     ver_entry['values'] = versiontuple
