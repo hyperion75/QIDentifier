@@ -12,7 +12,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 TAG_RE = re.compile(r'<[^>]+>')
 warnings.filterwarnings("ignore", message='Unverified HTTPS request is being made')
 
-#Useful for working directory troubleshooting:
+# Useful for working directory troubleshooting:
 """cwd = os.getcwd()
 print("Current working directory: {0}".format(cwd))
 print("Current script directory:" + os.path.realpath(__file__))
@@ -24,6 +24,7 @@ for f in files:
 root = Tk()
 root.title("QIDentifier")
 root.geometry('1280x720')
+
 
 def centerwindow(win):
     win.update_idletasks()
@@ -38,8 +39,8 @@ def centerwindow(win):
     win.geometry('{}x{}+{}+{}'.format(width, height, x, y))
     win.deiconify()
 
-centerwindow(root)
 
+centerwindow(root)
 
 root.tk.call("source", "sun-valley.tcl")
 root.tk.call("set_theme", "light")
@@ -47,14 +48,17 @@ root.tk.call("set_theme", "light")
 # Required for checkbox functionality
 exclude_kb_on = BooleanVar()
 
+
 def closewindow(x):
     x.destroy()
+
 
 def set_vs_version(ver):
     version = ver.get()
     keyring.set_password("QIDentifier.VS_VER", "VS", version)
     print('INFO: Setting VulnSigs version.')
     vsTitle.config(text="VulnSigs Sandbox: " + version)
+
 
 def list_vs_versions():
     url = "https://10.80.8.21/"
@@ -78,6 +82,7 @@ def list_vs_versions():
         versionlist.append(x.get_text())
     return versionlist
 
+
 # Started work on a button to switch between QID/CVE search methods
 def searchmethod(x):
     global sm
@@ -90,6 +95,7 @@ def searchmethod(x):
         sm = 0
         print("SearchMethod set to QID.")
 
+
 # 2 functions - Set the POD in keychain, then set the API login string in keychain.
 
 def storecredentials(username, password):
@@ -98,6 +104,7 @@ def storecredentials(username, password):
     keyring.set_password("QIDentifier.USER", "QIDer", username)
     keyring.set_password("QIDentifier.PASS", "QIDer", password)
     print('INFO: Successfully stored credentials in keychain.')
+
 
 # Popup window for POD Selection / API Login
 def settingspane():
@@ -108,14 +115,14 @@ def settingspane():
     centerwindow(settings)
 
     # settings UI positioning
-    credentialframe = ttk.LabelFrame(settings, text="Corp Credentials", padding=(20,10))
-    credentialframe.grid(row=1, column=1, padx=(20,10), pady=(20,10), sticky="nsew", rowspan=2)
-    vulnsigsframe = ttk.LabelFrame(settings, text="VULNSIGS Settings", padding=(20,10))
-    vulnsigsframe.grid(row=1, column=2, padx=(20,10), pady=(20,10), sticky="n")
+    credentialframe = ttk.LabelFrame(settings, text="Corp Credentials", padding=(20, 10))
+    credentialframe.grid(row=1, column=1, padx=(20, 10), pady=(20, 10), sticky="nsew", rowspan=2)
+    vulnsigsframe = ttk.LabelFrame(settings, text="VULNSIGS Settings", padding=(20, 10))
+    vulnsigsframe.grid(row=1, column=2, padx=(20, 10), pady=(20, 10), sticky="n")
 
     # settings UI elements
     closebutton = ttk.Button(settings, text="Done", width=10, command=lambda: closewindow(settings))
-    closebutton.grid(row=2,column=2, padx=(20,10), pady=(20,10), sticky="n")
+    closebutton.grid(row=2, column=2, padx=(20, 10), pady=(20, 10), sticky="n")
 
     # login settings
 
@@ -147,8 +154,10 @@ def settingspane():
     vs_confirm = ttk.Button(vulnsigsframe, text="Set Version", width=12, command=lambda: set_vs_version(ver))
     vs_confirm.grid(row=2, column=1, pady=15)
 
+
 def remove_tags(text):
     return TAG_RE.sub('', text)
+
 
 def base64encoder():
     username = keyring.get_password("QIDentifier.USER", "QIDer")
@@ -158,6 +167,7 @@ def base64encoder():
     base64_bytes = base64.b64encode(message_bytes)
     base64_encoded = base64_bytes.decode('ascii')
     return base64_encoded
+
 
 def pullsigs(qid):
     vulnVersion = keyring.get_password("QIDentifier.VS_VER", "VS")
@@ -185,23 +195,24 @@ def pullsigs(qid):
     substring1 = "qlua_func"
     substring2 = "qlua_dfunc"
     for x in parsed:
-        #.find() doesn't support lists, I'll have to switch this around to use another method sometime.
+        # .find() doesn't support lists, I'll have to switch this around to use another method sometime.
         if str(x).find(substring1) != -1:
             list_func.append(x.get_text() + '\n' + "================================")
         elif str(x).find(substring2) != -1:
             list_func.append(x.get_text() + '\n' + "================================")
         else:
             list_sig.append(x.get_text() + '\n' + "================================")
-    #sigs = '\n\n'.join(siglist)
+    # sigs = '\n\n'.join(siglist)
 
     sigs = '\n\n'.join(list_sig)
     funcs = '\n\n'.join(list_func)
 
     return sigs, funcs
 
+
 def pullqid(qid):
     auth = "Basic " + base64encoder()
-    #print(auth)
+    # print(auth)
     payload = {}
     headers = {
         'X-Requested-With': 'QualysPostman',
@@ -220,7 +231,7 @@ def pullqid(qid):
 
     soup = BeautifulSoup(response.content, 'html.parser')
 
-    #Main Tab Information
+    # Main Tab Information
     list_main = []
     q_name = soup.find('input', {"name": "form[TITLE]"})
     if q_name is not None:
@@ -304,7 +315,41 @@ def pullqid(qid):
 
     list_main.append('\n'.join(q_auth))
 
-    #Detail Tab Information
+    q_qprod = ['Supported Products:']
+    q_qprod_prep = soup.find_all('input', {'name': 'form[QUALYS_PRODUCT][]'})
+    print(q_qprod_prep)
+    for x in q_qprod_prep:
+        if x.has_attr('checked'):
+            if x['value'] == '1':
+                q_qprod.append('* Vulnerability Management')
+            if x['value'] == '4':
+                q_qprod.append('* Web Application Scanning')
+            if x['value'] == '5':
+                q_qprod.append('* Malware Detection')
+            if x['value'] == '6':
+                q_qprod.append('* Web Application Firewall')
+            if x['value'] == '9':
+                q_qprod.append('* API Security')
+            if x['value'] == '10':
+                q_qprod.append('* Secure Enterprise Mobility - iOS')
+            if x['value'] == '11':
+                q_qprod.append('* Secure Enterprise Mobility - Android')
+            if x['value'] == '2':
+                q_qprod.append('* Cloud Agent - Windows')
+            if x['value'] == '3':
+                q_qprod.append('* Cloud Agent - Linux')
+            if x['value'] == '8':
+                q_qprod.append('* Cloud Agent - AIX')
+            if x['value'] == '7':
+                q_qprod.append('* Cloud Agent - Mac')
+            if x['value'] == '12':
+                q_qprod.append('* Cloud Agent - BSD')
+            if x['value'] == '14':
+                q_qprod.append('* Cloud Agent - Solaris')
+
+    list_main.append('\n'.join(q_qprod))
+
+    # Detail Tab Information
     list_detail = []
     q_diagnosis = soup.find('textarea', {"name": "form[DESCRIPTION]"})
     if q_diagnosis.get_text() != "":
@@ -363,7 +408,7 @@ def pullqid(qid):
     else:
         list_detail.append('\n'.join(q_tid))
 
-    #Reference Tab Information
+    # Reference Tab Information
     list_ref = []
 
     q_cve = ['CVE: ']
@@ -384,6 +429,7 @@ def pullqid(qid):
     detail = '\n\n'.join(list_detail)
     ref = '\n\n'.join(list_ref)
     return (main, detail, ref)
+
 
 def pullcve(cve):
     auth = "Basic " + base64encoder()
@@ -419,22 +465,23 @@ def pullcve(cve):
                 acve2.append(x.get_text().replace('\xa0', ""))
     zipacve = zip(acve1, acve2)
     acve = dict(zipacve)
-    main.append('\n'.join('{} | {}'.format(k,v) for k, v in acve.items()))
+    main.append('\n'.join('{} | {}'.format(k, v) for k, v in acve.items()))
     return main
+
 
 def pullinfo():
     qid = qidInput.get()
-    #print('INFO: Pull initiated for ' + qid)
-    #print('INFO: SearchMethod set to ' + str(sm))
+    # print('INFO: Pull initiated for ' + qid)
+    # print('INFO: SearchMethod set to ' + str(sm))
 
-    #Clear old information from leftbook and rightbook
+    # Clear old information from leftbook and rightbook
     vso_sigs.delete(1.0, END)
     kbo_main.delete(1.0, END)
     kbo_detail.delete(1.0, END)
     kbo_ref.delete(1.0, END)
 
     # Display KB Information (if checkbox unchecked)
-    #pulls tab data to rightbook
+    # pulls tab data to rightbook
     if sm == 0:
         if exclude_kb_on.get() == 0:
             main, detail, ref = pullqid(qid)
@@ -445,7 +492,7 @@ def pullinfo():
         main = pullcve(qid)
         kbo_main.insert(END, main)
 
-    #pulls tab data to leftbook
+    # pulls tab data to leftbook
     if sm == 0:
         sigs, funcs = pullsigs(qid)
         vso_sigs.insert(END, sigs)
@@ -498,11 +545,11 @@ vsTitle.pack(side=LEFT, padx=5)
 kbTitle = ttk.Label(midframe, text="Qualys Knowledgebase", font=arialbold)
 kbTitle.pack(side=RIGHT, padx=5)
 
-#define the VS Signatures Notebook
+# define the VS Signatures Notebook
 leftbook = ttk.Notebook(bottomframe)
 leftbook.pack(side=LEFT, fill=BOTH, expand=True)
 
-#VULNSIGS notebook, signatures page
+# VULNSIGS notebook, signatures page
 lb_tab1 = ttk.Frame(leftbook)
 for index in [0, 1]:
     lb_tab1.columnconfigure(index=index, weight=1)
@@ -512,17 +559,17 @@ leftbook.add(lb_tab1, text="Signatures")
 vso_sigs = Text(lb_tab1, font=arial, wrap=WORD)
 vso_sigs.pack(expand=True, fill=BOTH)
 
-#VULNSIGS notebook, functions page
+# VULNSIGS notebook, functions page
 lb_tab2 = ttk.Frame(leftbook)
 leftbook.add(lb_tab2, text="Functions")
 vso_funcs = Text(lb_tab2, font=arial, wrap=WORD)
 vso_funcs.pack(expand=True, fill=BOTH)
 
-#define KB Output Notebook
+# define KB Output Notebook
 rightbook = ttk.Notebook(bottomframe)
 rightbook.pack(side=LEFT, fill=BOTH, expand=True)
 
-#KBO Notebook, main page
+# KBO Notebook, main page
 rb_tab1 = ttk.Frame(rightbook)
 for index in [0, 1]:
     rb_tab1.columnconfigure(index=index, weight=1)
@@ -532,13 +579,13 @@ rightbook.add(rb_tab1, text="General")
 kbo_main = Text(rb_tab1, font=arial, wrap=WORD)
 kbo_main.pack(expand=True, fill=BOTH)
 
-#KBO Notebook, detail page
+# KBO Notebook, detail page
 rb_tab2 = ttk.Frame(rightbook)
 rightbook.add(rb_tab2, text="Detail")
 kbo_detail = Text(rb_tab2, font=arial, wrap=WORD)
 kbo_detail.pack(expand=True, fill=BOTH)
 
-#KBO Notebook, CVE page
+# KBO Notebook, CVE page
 rb_tab4 = ttk.Frame(rightbook)
 rightbook.add(rb_tab4, text="Reference")
 kbo_ref = Text(rb_tab4, font=arial, wrap=WORD)
