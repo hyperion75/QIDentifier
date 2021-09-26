@@ -53,6 +53,7 @@ def closewindow(x):
 def set_vs_version(ver):
     version = ver.get()
     keyring.set_password("QIDentifier.VS_VER", "VS", version)
+    print('INFO: Setting VulnSigs version.')
     vsTitle.config(text="VulnSigs Sandbox: " + version)
 
 def list_vs_versions():
@@ -64,7 +65,10 @@ def list_vs_versions():
         'Accept-Language': 'en-US,en;q=0.9'
     }
     response = requests.request("GET", url, headers=headers, verify=False)
-    print(response.status_code)
+    if response.status_code == 200:
+        print('INFO: Successfully connected to VulnSigs Sandbox (https://10.80.8.21/)')
+    else:
+        print('ERROR: Could not connect to VulnSigs Sandbox (https://10.80.8.21/)')
 
     soup = BeautifulSoup(response.content, 'html.parser')
 
@@ -80,11 +84,11 @@ def searchmethod(x):
     if x == 0:
         switchbuttonx.config(text="CVE")
         sm = 1
-        print("Searchmethod set to " + str(sm))
+        print("SearchMethod set to CVE.")
     elif x == 1:
         switchbuttonx.config(text="QID")
         sm = 0
-        print("Searchmethod set to " + str(sm))
+        print("SearchMethod set to QID.")
 
 # 2 functions - Set the POD in keychain, then set the API login string in keychain.
 
@@ -93,6 +97,7 @@ def storecredentials(username, password):
     password = password.get()
     keyring.set_password("QIDentifier.USER", "QIDer", username)
     keyring.set_password("QIDentifier.PASS", "QIDer", password)
+    print('INFO: Successfully stored credentials in keychain.')
 
 # Popup window for POD Selection / API Login
 def settingspane():
@@ -167,7 +172,10 @@ def pullsigs(qid):
         'Accept-Language': 'en-US,en;q=0.9'
     }
     response = requests.request("POST", url, headers=headers, data=payload, verify=False)
-    print(response.status_code)
+    if response.status_code == 200:
+        print('INFO: Successfully connected to VulnSigs Sandbox (https://10.80.8.21/)')
+    else:
+        print('ERROR: Could not connect to VulnSigs Sandbox (https://10.80.8.21/)')
 
     soup = BeautifulSoup(response.content, 'html.parser')
 
@@ -193,6 +201,7 @@ def pullsigs(qid):
 
 def pullqid(qid):
     auth = "Basic " + base64encoder()
+    #print(auth)
     payload = {}
     headers = {
         'X-Requested-With': 'QualysPostman',
@@ -203,8 +212,11 @@ def pullqid(qid):
     response = requests.request("GET",
                                 "https://vuln.intranet.qualys.com:8443/main/qualysedit.php?id=" + qid + "&lang=en",
                                 headers=headers, data=payload, verify=False)
-    kb_querystatus = response.status_code
-    print(kb_querystatus)
+    if response.status_code == 200:
+        print('INFO: Successfully connected to VulnOffice (https://vuln.intranet.qualys.com:8443)')
+    else:
+        print('ERROR: Could not connect to VulnOffice (https://vuln.intranet.qualys.com:8443). Verify your corp '
+              'credentials are correct.')
 
     soup = BeautifulSoup(response.content, 'html.parser')
 
@@ -222,7 +234,7 @@ def pullqid(qid):
         elif q_vulntype['value'] == 'Practice':
             list_main.append("Vulnerability Type: Potential Vulnerability")
         else:
-            print(q_vulntype)
+            print('ERROR: Unrecognized Vuln Type - ' + q_vulntype)
             list_main.append("Vulnerability Type: Unknown Vuln Type")
 
     q_sev_prep = soup.find('select', {"name": "form[SEVERITY]"})
@@ -386,8 +398,11 @@ def pullcve(cve):
     response = requests.request("POST",
                                 "https://vuln.intranet.qualys.com:8443/main/index.php",
                                 headers=headers, data=payload, verify=False)
-    kb_querystatus = response.status_code
-    print(kb_querystatus)
+    if response.status_code == 200:
+        print('INFO: Successfully connected to VulnOffice (https://vuln.intranet.qualys.com:8443)')
+    else:
+        print('ERROR: Could not connect to VulnOffice (https://vuln.intranet.qualys.com:8443). Verify your corp '
+              'credentials are correct.')
 
     soup = BeautifulSoup(response.content, 'html.parser')
 
@@ -409,6 +424,8 @@ def pullcve(cve):
 
 def pullinfo():
     qid = qidInput.get()
+    #print('INFO: Pull initiated for ' + qid)
+    #print('INFO: SearchMethod set to ' + str(sm))
 
     #Clear old information from leftbook and rightbook
     vso_sigs.delete(1.0, END)
@@ -469,6 +486,8 @@ btn_retrieve.pack(side=LEFT, padx=15)
 # vsTitle is set to global so that it's updated automatically when you change VULNSIGS version.
 global vsTitle
 if keyring.get_password("QIDentifier.VS_VER", "VS") == None:
+    vsText = "VulnSigs Sandbox: VERSION NOT CONFIGURED"
+elif keyring.get_password("QIDentifier.VS_VER", "VS") == '':
     vsText = "VulnSigs Sandbox: VERSION NOT CONFIGURED"
 elif keyring.get_password("QIDentifier.VS_VER", "VS") != "":
     vsText = "VulnSigs Sandbox: " + keyring.get_password("QIDentifier.VS_VER", "VS")
