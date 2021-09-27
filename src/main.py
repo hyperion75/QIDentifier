@@ -489,31 +489,23 @@ def pullinfo():
     kbo_ref.delete(1.0, END)
 
     # Display KB Information (if checkbox unchecked)
-    # pulls tab data to rightbook
-    if sm == 0:
-        if 'CVE' not in qid:
-            if exclude_kb_on.get() == 0:
-                main, detail, ref = pullqid(qid)
-                kbo_main.insert(END, main)
-                kbo_detail.insert(END, detail)
-                kbo_ref.insert(END, ref)
-        else:
-            kbo_main.insert(END, "The provided QID does not match Qualys records.\n\nDid you remember to switch to CVE mode?")
-            kbo_detail.insert(END, "The provided QID does not match Qualys records.\n\nDid you remember to switch to CVE mode?")
-            kbo_ref.insert(END, "The provided QID does not match Qualys records.\n\nDid you remember to switch to CVE mode?")
-            print('ERROR: Unrecognized QID (CVE Detected)')
-    if sm == 1:
+    if 'CVE' not in qid:
+        if exclude_kb_on.get() == 0:
+            # pulls tab data to rightbook
+            main, detail, ref = pullqid(qid)
+            kbo_main.insert(END, main)
+            kbo_detail.insert(END, detail)
+            kbo_ref.insert(END, ref)
+            # pulls tab data to leftbook
+            sigs, funcs = pullsigs(qid)
+            vso_sigs.insert(END, sigs)
+            vso_funcs.insert(END, funcs)
+    else:
+        # pulls tab data to rightbook
         main, detail, ref = pullcve(qid)
         kbo_main.insert(END, main)
         kbo_detail.insert(END, detail)
         kbo_ref.insert(END, ref)
-
-    # pulls tab data to leftbook
-    if sm == 0:
-        sigs, funcs = pullsigs(qid)
-        vso_sigs.insert(END, sigs)
-        vso_funcs.insert(END, funcs)
-
 
 # Everything below this is UI position related
 # Top, Middle, Bottom, Footer frame definitions
@@ -534,11 +526,8 @@ arialbold = ("Arial", 12, "bold")
 arial = ("Arial", 12)
 
 # UI Elements
-label_search = ttk.Label(topframe, text="Search:", font=arialheader)
-label_search.pack(side=LEFT, padx=5)
-sm = 0
-switchbuttonx = ttk.Button(topframe, text="QID", command=lambda: searchmethod(sm))
-switchbuttonx.pack(side=LEFT)
+label_search = ttk.Label(topframe, text="QID / CVE:", font=arialheader)
+label_search.pack(side=LEFT, padx=10)
 
 qidInput = ttk.Entry(topframe, width=14)
 qidInput.pack(side=LEFT)
