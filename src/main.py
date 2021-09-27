@@ -89,11 +89,11 @@ def searchmethod(x):
     if x == 0:
         switchbuttonx.config(text="CVE")
         sm = 1
-        print("SearchMethod set to CVE.")
+        print("INFO: SearchMethod set to CVE.")
     elif x == 1:
         switchbuttonx.config(text="QID")
         sm = 0
-        print("SearchMethod set to QID.")
+        print("INFO: SearchMethod set to QID.")
 
 
 # 2 functions - Set the POD in keychain, then set the API login string in keychain.
@@ -234,8 +234,14 @@ def pullqid(qid):
     # Main Tab Information
     list_main = []
     q_name = soup.find('input', {"name": "form[TITLE]"})
-    if q_name is not None:
+    if q_name['value'] != '':
         list_main.append("Title: " + q_name['value'])
+    else:
+        main = "The provided QID does not match Qualys records."
+        detail = "The provided QID does not match Qualys records."
+        ref = "The provided QID does not match Qualys records."
+        print('ERROR: Unrecognized QID')
+        return main, detail, ref
 
     q_vulntype_prep = soup.find('select', {"name": "form[CATEGORY]"})
     if q_vulntype_prep.has_attr('name'):
@@ -251,7 +257,8 @@ def pullqid(qid):
     q_sev_prep = soup.find('select', {"name": "form[SEVERITY]"})
     if q_sev_prep.has_attr('name'):
         q_sev = q_sev_prep.find("option", {'selected': True})
-        list_main.append("Severity: Level " + q_sev['value'])
+        if q_sev is not None:
+            list_main.append("Severity: Level " + q_sev['value'])
 
     q_cvss3 = soup.find("input", {"name": "form[BASESCORE_V3]"})
     if q_cvss3 is not None:
@@ -465,14 +472,15 @@ def pullcve(cve):
     zipacve = zip(acve1, acve2)
     acve = dict(zipacve)
     cve_list.append('\n'.join("{} | {}".format(k, v) for k, v in acve.items()))
+
     main = ''.join(cve_list)
-    return main
+    detail = ''.join(cve_list)
+    ref = ''.join(cve_list)
+    return (main, detail, ref)
 
 
 def pullinfo():
     qid = qidInput.get()
-    # print('INFO: Pull initiated for ' + qid)
-    # print('INFO: SearchMethod set to ' + str(sm))
 
     # Clear old information from leftbook and rightbook
     vso_sigs.delete(1.0, END)
@@ -483,14 +491,22 @@ def pullinfo():
     # Display KB Information (if checkbox unchecked)
     # pulls tab data to rightbook
     if sm == 0:
-        if exclude_kb_on.get() == 0:
-            main, detail, ref = pullqid(qid)
-            kbo_main.insert(END, main)
-            kbo_detail.insert(END, detail)
-            kbo_ref.insert(END, ref)
+        if 'CVE' not in qid:
+            if exclude_kb_on.get() == 0:
+                main, detail, ref = pullqid(qid)
+                kbo_main.insert(END, main)
+                kbo_detail.insert(END, detail)
+                kbo_ref.insert(END, ref)
+        else:
+            kbo_main.insert(END, "The provided QID does not match Qualys records.\n\nDid you remember to switch to CVE mode?")
+            kbo_detail.insert(END, "The provided QID does not match Qualys records.\n\nDid you remember to switch to CVE mode?")
+            kbo_ref.insert(END, "The provided QID does not match Qualys records.\n\nDid you remember to switch to CVE mode?")
+            print('ERROR: Unrecognized QID (CVE Detected)')
     if sm == 1:
-        main = pullcve(qid)
+        main, detail, ref = pullcve(qid)
         kbo_main.insert(END, main)
+        kbo_detail.insert(END, detail)
+        kbo_ref.insert(END, ref)
 
     # pulls tab data to leftbook
     if sm == 0:
@@ -524,7 +540,7 @@ sm = 0
 switchbuttonx = ttk.Button(topframe, text="QID", command=lambda: searchmethod(sm))
 switchbuttonx.pack(side=LEFT)
 
-qidInput = ttk.Entry(topframe, width=12)
+qidInput = ttk.Entry(topframe, width=14)
 qidInput.pack(side=LEFT)
 
 btn_retrieve = ttk.Button(topframe, text="Go", command=pullinfo)
