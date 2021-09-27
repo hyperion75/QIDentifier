@@ -317,7 +317,6 @@ def pullqid(qid):
 
     q_qprod = ['Supported Products:']
     q_qprod_prep = soup.find_all('input', {'name': 'form[QUALYS_PRODUCT][]'})
-    print(q_qprod_prep)
     for x in q_qprod_prep:
         if x.has_attr('checked'):
             if x['value'] == '1':
@@ -452,7 +451,7 @@ def pullcve(cve):
 
     soup = BeautifulSoup(response.content, 'html.parser')
 
-    main = []
+    cve_list = []
     acve1 = []
     acve2 = []
     acve_prep1 = soup.find_all('a', {"target": "_blank"})
@@ -465,7 +464,8 @@ def pullcve(cve):
                 acve2.append(x.get_text().replace('\xa0', ""))
     zipacve = zip(acve1, acve2)
     acve = dict(zipacve)
-    main.append('\n'.join('{} | {}'.format(k, v) for k, v in acve.items()))
+    cve_list.append('\n'.join("{} | {}".format(k, v) for k, v in acve.items()))
+    main = ''.join(cve_list)
     return main
 
 
