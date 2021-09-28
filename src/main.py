@@ -7,6 +7,7 @@ import base64
 import os
 import re
 import warnings
+import webbrowser
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 TAG_RE = re.compile(r'<[^>]+>')
@@ -49,6 +50,43 @@ root.tk.call("set_theme", "light")
 exclude_kb_on = BooleanVar()
 
 
+class HyperlinkManager:
+
+    def __init__(self, text):
+
+        self.text = text
+
+        self.text.tag_config("hyper", foreground="blue", underline=1)
+
+        self.text.tag_bind("hyper", "<Enter>", self._enter)
+        self.text.tag_bind("hyper", "<Leave>", self._leave)
+        self.text.tag_bind("hyper", "<Button-1>", self._click)
+
+        self.reset()
+
+    def reset(self):
+        self.links = {}
+
+    def add(self, action):
+        # add an action to the manager.  returns tags to use in
+        # associated text widget
+        tag = "hyper-%d" % len(self.links)
+        self.links[tag] = action
+        return "hyper", tag
+
+    def _enter(self, event):
+        self.text.config(cursor="pointinghand")
+
+    def _leave(self, event):
+        self.text.config(cursor="")
+
+    def _click(self, event):
+        for tag in self.text.tag_names(CURRENT):
+            if tag[:6] == "hyper-":
+                self.links[tag]()
+                return
+
+
 def closewindow(x):
     x.destroy()
 
@@ -89,11 +127,11 @@ def searchmethod(x):
     if x == 0:
         switchbuttonx.config(text="CVE")
         sm = 1
-        print("SearchMethod set to CVE.")
+        print("INFO: SearchMethod set to CVE.")
     elif x == 1:
         switchbuttonx.config(text="QID")
         sm = 0
-        print("SearchMethod set to QID.")
+        print("INFO: SearchMethod set to QID.")
 
 
 # 2 functions - Set the POD in keychain, then set the API login string in keychain.
@@ -234,8 +272,14 @@ def pullqid(qid):
     # Main Tab Information
     list_main = []
     q_name = soup.find('input', {"name": "form[TITLE]"})
-    if q_name is not None:
+    if q_name['value'] != '':
         list_main.append("Title: " + q_name['value'])
+    else:
+        main = "The provided QID does not match Qualys records."
+        detail = "The provided QID does not match Qualys records."
+        ref = "The provided QID does not match Qualys records."
+        print('ERROR: Unrecognized QID')
+        return main, detail, ref
 
     q_vulntype_prep = soup.find('select', {"name": "form[CATEGORY]"})
     if q_vulntype_prep.has_attr('name'):
@@ -251,7 +295,8 @@ def pullqid(qid):
     q_sev_prep = soup.find('select', {"name": "form[SEVERITY]"})
     if q_sev_prep.has_attr('name'):
         q_sev = q_sev_prep.find("option", {'selected': True})
-        list_main.append("Severity: Level " + q_sev['value'])
+        if q_sev is not None:
+            list_main.append("Severity: Level " + q_sev['value'])
 
     q_cvss3 = soup.find("input", {"name": "form[BASESCORE_V3]"})
     if q_cvss3 is not None:
@@ -317,7 +362,6 @@ def pullqid(qid):
 
     q_qprod = ['Supported Products:']
     q_qprod_prep = soup.find_all('input', {'name': 'form[QUALYS_PRODUCT][]'})
-    print(q_qprod_prep)
     for x in q_qprod_prep:
         if x.has_attr('checked'):
             if x['value'] == '1':
@@ -452,27 +496,32 @@ def pullcve(cve):
 
     soup = BeautifulSoup(response.content, 'html.parser')
 
-    main = []
+    cve_list = []
     acve1 = []
     acve2 = []
     acve_prep1 = soup.find_all('a', {"target": "_blank"})
     acve_prep2 = soup.find_all('a', href=True)
-    for x in acve_prep1:
-        acve1.append(x['href'].replace('translate.php?id=', ''))
-    for x in acve_prep2:
-        if x.get_text() != '':
-            if x.get_text() != 'jp':
-                acve2.append(x.get_text().replace('\xa0', ""))
+    if len(acve_prep1) != 0:
+        for x in acve_prep1:
+            acve1.append(x['href'].replace('translate.php?id=', ''))
+        for x in acve_prep2:
+            if x.get_text() != '':
+                if x.get_text() != 'jp':
+                    acve2.append(x.get_text().replace('\xa0', ""))
+    else:
+        main = "The provided CVE does not match Qualys records."
+        print('ERROR: Unrecognized CVE')
+        return main
     zipacve = zip(acve1, acve2)
     acve = dict(zipacve)
-    main.append('\n'.join('{} | {}'.format(k, v) for k, v in acve.items()))
+    cve_list.append('\n'.join("{} | {}".format(k, v) for k, v in acve.items()))
+
+    main = ''.join(cve_list)
     return main
 
 
 def pullinfo():
     qid = qidInput.get()
-    # print('INFO: Pull initiated for ' + qid)
-    # print('INFO: SearchMethod set to ' + str(sm))
 
     # Clear old information from leftbook and rightbook
     vso_sigs.delete(1.0, END)
@@ -481,23 +530,36 @@ def pullinfo():
     kbo_ref.delete(1.0, END)
 
     # Display KB Information (if checkbox unchecked)
-    # pulls tab data to rightbook
-    if sm == 0:
+    if 'CVE' not in qid:
         if exclude_kb_on.get() == 0:
+            print('INFO: Pulling information for QID: ' + qid)
+            # UI Adjustment
+            rightbook.tab(0, state='normal', text='General')
+            rightbook.tab(1, state='normal')
+            rightbook.tab(2, state='normal')
+            # pulls tab data to rightbook
             main, detail, ref = pullqid(qid)
             kbo_main.insert(END, main)
             kbo_detail.insert(END, detail)
             kbo_ref.insert(END, ref)
-    if sm == 1:
+            # pulls tab data to leftbook
+            sigs, funcs = pullsigs(qid)
+            vso_sigs.insert(END, sigs)
+            vso_funcs.insert(END, funcs)
+    else:
+        print('INFO: Pulling information for ' + qid)
+        #UI Adjustment
+        rightbook.tab(0, state='normal', text='Related QIDs')
+        rightbook.tab(1, state='hidden')
+        rightbook.tab(2, state='hidden')
+        # pulls tab data to rightbook
         main = pullcve(qid)
         kbo_main.insert(END, main)
 
-    # pulls tab data to leftbook
-    if sm == 0:
-        sigs, funcs = pullsigs(qid)
-        vso_sigs.insert(END, sigs)
-        vso_funcs.insert(END, funcs)
-
+def pulljira():
+    qid = qidInput.get()
+    webbrowser.open_new_tab("https://jira.intranet.qualys.com/issues/?jql=summary+%7E+%22" + qid + "*%22+OR+description"
+                                                                                                   "+%7E+%22" + qid + "*%22+ORDER+BY+lastViewed+DESC")
 
 # Everything below this is UI position related
 # Top, Middle, Bottom, Footer frame definitions
@@ -518,17 +580,17 @@ arialbold = ("Arial", 12, "bold")
 arial = ("Arial", 12)
 
 # UI Elements
-label_search = ttk.Label(topframe, text="Search:", font=arialheader)
-label_search.pack(side=LEFT, padx=5)
-sm = 0
-switchbuttonx = ttk.Button(topframe, text="QID", command=lambda: searchmethod(sm))
-switchbuttonx.pack(side=LEFT)
+label_search = ttk.Label(topframe, text="QID / CVE:", font=arialheader)
+label_search.pack(side=LEFT, padx=10)
 
-qidInput = ttk.Entry(topframe, width=12)
+qidInput = ttk.Entry(topframe, width=14)
 qidInput.pack(side=LEFT)
 
 btn_retrieve = ttk.Button(topframe, text="Go", command=pullinfo)
 btn_retrieve.pack(side=LEFT, padx=15)
+
+btn_JIRA = ttk.Button(topframe, text="Open in JIRA", command=pulljira)
+btn_JIRA.pack(side=LEFT)
 
 # vsTitle is set to global so that it's updated automatically when you change VULNSIGS version.
 global vsTitle
@@ -569,26 +631,26 @@ vso_funcs.pack(expand=True, fill=BOTH)
 rightbook = ttk.Notebook(bottomframe)
 rightbook.pack(side=LEFT, fill=BOTH, expand=True)
 
-# KBO Notebook, main page
-rb_tab1 = ttk.Frame(rightbook)
+# KBO Notebook, General page
+rb_tab_general = ttk.Frame(rightbook)
 for index in [0, 1]:
-    rb_tab1.columnconfigure(index=index, weight=1)
-    rb_tab1.rowconfigure(index=index, weight=1)
-rightbook.add(rb_tab1, text="General")
+    rb_tab_general.columnconfigure(index=index, weight=1)
+    rb_tab_general.rowconfigure(index=index, weight=1)
+rightbook.add(rb_tab_general, text="General", state='normal')
 
-kbo_main = Text(rb_tab1, font=arial, wrap=WORD)
+kbo_main = Text(rb_tab_general, font=arial, wrap=WORD)
 kbo_main.pack(expand=True, fill=BOTH)
 
-# KBO Notebook, detail page
-rb_tab2 = ttk.Frame(rightbook)
-rightbook.add(rb_tab2, text="Detail")
-kbo_detail = Text(rb_tab2, font=arial, wrap=WORD)
+# KBO Notebook, Detail page
+rb_tab_detail = ttk.Frame(rightbook)
+rightbook.add(rb_tab_detail, text="Detail", state='normal')
+kbo_detail = Text(rb_tab_detail, font=arial, wrap=WORD)
 kbo_detail.pack(expand=True, fill=BOTH)
 
-# KBO Notebook, CVE page
-rb_tab4 = ttk.Frame(rightbook)
-rightbook.add(rb_tab4, text="Reference")
-kbo_ref = Text(rb_tab4, font=arial, wrap=WORD)
+# KBO Notebook, Reference page
+rb_tab_ref = ttk.Frame(rightbook)
+rightbook.add(rb_tab_ref, text="Reference", state='normal')
+kbo_ref = Text(rb_tab_ref, font=arial, wrap=WORD)
 kbo_ref.pack(expand=True, fill=BOTH)
 
 settings = ttk.Button(footerframe, text="Settings", command=lambda: settingspane())
