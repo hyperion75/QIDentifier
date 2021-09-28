@@ -7,6 +7,7 @@ import base64
 import os
 import re
 import warnings
+import webbrowser
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 TAG_RE = re.compile(r'<[^>]+>')
@@ -516,6 +517,12 @@ def pullinfo():
         kbo_detail.insert(END, detail)
         kbo_ref.insert(END, ref)
 
+def pulljira():
+    qid = qidInput.get()
+    #webbrowser.open_new_tab("https://jira.intranet.qualys.com/secure/QuickSearch.jspa?searchString=" + qid)
+    webbrowser.open_new_tab("https://jira.intranet.qualys.com/issues/?jql=summary+%7E+%22" + qid +"*%22+OR+description"
+                            "+%7E+%22" + qid + "*%22+ORDER+BY+lastViewed+DESC")
+
 # Everything below this is UI position related
 # Top, Middle, Bottom, Footer frame definitions
 frame = Frame(root)
@@ -543,6 +550,9 @@ qidInput.pack(side=LEFT)
 
 btn_retrieve = ttk.Button(topframe, text="Go", command=pullinfo)
 btn_retrieve.pack(side=LEFT, padx=15)
+
+btn_JIRA = ttk.Button(topframe, text="Open in JIRA", command=pulljira)
+btn_JIRA.pack(side=LEFT)
 
 # vsTitle is set to global so that it's updated automatically when you change VULNSIGS version.
 global vsTitle
