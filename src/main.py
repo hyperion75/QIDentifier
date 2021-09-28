@@ -510,10 +510,8 @@ def pullcve(cve):
                     acve2.append(x.get_text().replace('\xa0', ""))
     else:
         main = "The provided CVE does not match Qualys records."
-        detail = "The provided CVE does not match Qualys records."
-        ref = "The provided CVE does not match Qualys records."
         print('ERROR: Unrecognized CVE')
-        return (main, detail, ref)
+        return main
     zipacve = zip(acve1, acve2)
     acve = dict(zipacve)
     cve_list.append('\n'.join("{} | {}".format(k, v) for k, v in acve.items()))
