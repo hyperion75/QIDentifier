@@ -50,6 +50,43 @@ root.tk.call("set_theme", "light")
 exclude_kb_on = BooleanVar()
 
 
+class HyperlinkManager:
+
+    def __init__(self, text):
+
+        self.text = text
+
+        self.text.tag_config("hyper", foreground="blue", underline=1)
+
+        self.text.tag_bind("hyper", "<Enter>", self._enter)
+        self.text.tag_bind("hyper", "<Leave>", self._leave)
+        self.text.tag_bind("hyper", "<Button-1>", self._click)
+
+        self.reset()
+
+    def reset(self):
+        self.links = {}
+
+    def add(self, action):
+        # add an action to the manager.  returns tags to use in
+        # associated text widget
+        tag = "hyper-%d" % len(self.links)
+        self.links[tag] = action
+        return "hyper", tag
+
+    def _enter(self, event):
+        self.text.config(cursor="pointinghand")
+
+    def _leave(self, event):
+        self.text.config(cursor="")
+
+    def _click(self, event):
+        for tag in self.text.tag_names(CURRENT):
+            if tag[:6] == "hyper-":
+                self.links[tag]()
+                return
+
+
 def closewindow(x):
     x.destroy()
 
@@ -482,9 +519,7 @@ def pullcve(cve):
     cve_list.append('\n'.join("{} | {}".format(k, v) for k, v in acve.items()))
 
     main = ''.join(cve_list)
-    detail = ''.join(cve_list)
-    ref = ''.join(cve_list)
-    return (main, detail, ref)
+    return main
 
 
 def pullinfo():
@@ -500,6 +535,10 @@ def pullinfo():
     if 'CVE' not in qid:
         if exclude_kb_on.get() == 0:
             print('INFO: Pulling information for QID: ' + qid)
+            # UI Adjustment
+            rightbook.tab(0, state='normal', text='General')
+            rightbook.tab(1, state='normal')
+            rightbook.tab(2, state='normal')
             # pulls tab data to rightbook
             main, detail, ref = pullqid(qid)
             kbo_main.insert(END, main)
@@ -511,17 +550,18 @@ def pullinfo():
             vso_funcs.insert(END, funcs)
     else:
         print('INFO: Pulling information for ' + qid)
+        #UI Adjustment
+        rightbook.tab(0, state='normal', text='Related QIDs')
+        rightbook.tab(1, state='hidden')
+        rightbook.tab(2, state='hidden')
         # pulls tab data to rightbook
-        main, detail, ref = pullcve(qid)
+        main = pullcve(qid)
         kbo_main.insert(END, main)
-        kbo_detail.insert(END, detail)
-        kbo_ref.insert(END, ref)
 
 def pulljira():
     qid = qidInput.get()
-    #webbrowser.open_new_tab("https://jira.intranet.qualys.com/secure/QuickSearch.jspa?searchString=" + qid)
-    webbrowser.open_new_tab("https://jira.intranet.qualys.com/issues/?jql=summary+%7E+%22" + qid +"*%22+OR+description"
-                            "+%7E+%22" + qid + "*%22+ORDER+BY+lastViewed+DESC")
+    webbrowser.open_new_tab("https://jira.intranet.qualys.com/issues/?jql=summary+%7E+%22" + qid + "*%22+OR+description"
+                                                                                                   "+%7E+%22" + qid + "*%22+ORDER+BY+lastViewed+DESC")
 
 # Everything below this is UI position related
 # Top, Middle, Bottom, Footer frame definitions
@@ -593,26 +633,26 @@ vso_funcs.pack(expand=True, fill=BOTH)
 rightbook = ttk.Notebook(bottomframe)
 rightbook.pack(side=LEFT, fill=BOTH, expand=True)
 
-# KBO Notebook, main page
-rb_tab1 = ttk.Frame(rightbook)
+# KBO Notebook, General page
+rb_tab_general = ttk.Frame(rightbook)
 for index in [0, 1]:
-    rb_tab1.columnconfigure(index=index, weight=1)
-    rb_tab1.rowconfigure(index=index, weight=1)
-rightbook.add(rb_tab1, text="General")
+    rb_tab_general.columnconfigure(index=index, weight=1)
+    rb_tab_general.rowconfigure(index=index, weight=1)
+rightbook.add(rb_tab_general, text="General", state='normal')
 
-kbo_main = Text(rb_tab1, font=arial, wrap=WORD)
+kbo_main = Text(rb_tab_general, font=arial, wrap=WORD)
 kbo_main.pack(expand=True, fill=BOTH)
 
-# KBO Notebook, detail page
-rb_tab2 = ttk.Frame(rightbook)
-rightbook.add(rb_tab2, text="Detail")
-kbo_detail = Text(rb_tab2, font=arial, wrap=WORD)
+# KBO Notebook, Detail page
+rb_tab_detail = ttk.Frame(rightbook)
+rightbook.add(rb_tab_detail, text="Detail", state='normal')
+kbo_detail = Text(rb_tab_detail, font=arial, wrap=WORD)
 kbo_detail.pack(expand=True, fill=BOTH)
 
-# KBO Notebook, CVE page
-rb_tab4 = ttk.Frame(rightbook)
-rightbook.add(rb_tab4, text="Reference")
-kbo_ref = Text(rb_tab4, font=arial, wrap=WORD)
+# KBO Notebook, Reference page
+rb_tab_ref = ttk.Frame(rightbook)
+rightbook.add(rb_tab_ref, text="Reference", state='normal')
+kbo_ref = Text(rb_tab_ref, font=arial, wrap=WORD)
 kbo_ref.pack(expand=True, fill=BOTH)
 
 settings = ttk.Button(footerframe, text="Settings", command=lambda: settingspane())
