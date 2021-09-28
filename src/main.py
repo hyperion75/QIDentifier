@@ -463,12 +463,19 @@ def pullcve(cve):
     acve2 = []
     acve_prep1 = soup.find_all('a', {"target": "_blank"})
     acve_prep2 = soup.find_all('a', href=True)
-    for x in acve_prep1:
-        acve1.append(x['href'].replace('translate.php?id=', ''))
-    for x in acve_prep2:
-        if x.get_text() != '':
-            if x.get_text() != 'jp':
-                acve2.append(x.get_text().replace('\xa0', ""))
+    if len(acve_prep1) != 0:
+        for x in acve_prep1:
+            acve1.append(x['href'].replace('translate.php?id=', ''))
+        for x in acve_prep2:
+            if x.get_text() != '':
+                if x.get_text() != 'jp':
+                    acve2.append(x.get_text().replace('\xa0', ""))
+    else:
+        main = "The provided CVE does not match Qualys records."
+        detail = "The provided CVE does not match Qualys records."
+        ref = "The provided CVE does not match Qualys records."
+        print('ERROR: Unrecognized CVE')
+        return (main, detail, ref)
     zipacve = zip(acve1, acve2)
     acve = dict(zipacve)
     cve_list.append('\n'.join("{} | {}".format(k, v) for k, v in acve.items()))
@@ -491,6 +498,7 @@ def pullinfo():
     # Display KB Information (if checkbox unchecked)
     if 'CVE' not in qid:
         if exclude_kb_on.get() == 0:
+            print('INFO: Pulling information for QID: ' + qid)
             # pulls tab data to rightbook
             main, detail, ref = pullqid(qid)
             kbo_main.insert(END, main)
@@ -501,6 +509,7 @@ def pullinfo():
             vso_sigs.insert(END, sigs)
             vso_funcs.insert(END, funcs)
     else:
+        print('INFO: Pulling information for ' + qid)
         # pulls tab data to rightbook
         main, detail, ref = pullcve(qid)
         kbo_main.insert(END, main)
