@@ -120,20 +120,6 @@ def list_vs_versions():
         versionlist.append(x.get_text())
     return versionlist
 
-
-# Started work on a button to switch between QID/CVE search methods
-def searchmethod(x):
-    global sm
-    if x == 0:
-        switchbuttonx.config(text="CVE")
-        sm = 1
-        print("INFO: SearchMethod set to CVE.")
-    elif x == 1:
-        switchbuttonx.config(text="QID")
-        sm = 0
-        print("INFO: SearchMethod set to QID.")
-
-
 # 2 functions - Set the POD in keychain, then set the API login string in keychain.
 
 def storecredentials(username, password):
@@ -233,14 +219,13 @@ def pullsigs(qid):
     substring1 = "qlua_func"
     substring2 = "qlua_dfunc"
     for x in parsed:
-        # .find() doesn't support lists, I'll have to switch this around to use another method sometime.
         if str(x).find(substring1) != -1:
             list_func.append(x.get_text() + '\n' + "================================")
         elif str(x).find(substring2) != -1:
             list_func.append(x.get_text() + '\n' + "================================")
         else:
-            list_sig.append(x.get_text() + '\n' + "================================")
-    # sigs = '\n\n'.join(siglist)
+            removeescape = str(x).replace("\\\\", "\\")
+            list_sig.append(removeescape + '\n' + "================================")
 
     sigs = '\n\n'.join(list_sig)
     funcs = '\n\n'.join(list_func)
