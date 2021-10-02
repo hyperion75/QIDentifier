@@ -451,6 +451,10 @@ def pullcve(cve):
         cve_id_prep = x.find('a', {"target": "_blank"})
         if cve_id_prep is not None:
             cve_id.append(cve_id_prep['href'].replace('translate.php?id=', ''))
+        else:
+            main = "The provided CVE does not match Qualys records."
+            print('ERROR: Unrecognized CVE')
+            return main
     for x in cve_rows:
         cve_title_prep = x.find_all('a', href=True)
         for x in cve_title_prep:
