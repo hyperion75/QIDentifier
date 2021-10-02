@@ -480,33 +480,40 @@ def pullcve(cve):
               'credentials are correct.')
 
     soup = BeautifulSoup(response.content, 'html.parser')
+    cve_rows = soup.find_all('tr')
 
-    cve_list = []
-    acve1 = []
-    acve2 = []
-    acve_prep1 = soup.find_all('a', {"target": "_blank"})
-    acve_prep2 = soup.find_all('a', href=True)
-    if len(acve_prep1) != 0:
-        for x in acve_prep1:
-            acve1.append(x['href'].replace('translate.php?id=', ''))
-        for x in acve_prep2:
+    cve_id = []
+    cve_title = []
+    cve_imp = []
+    for x in cve_rows:
+        cve_id_prep = x.find('a', {"target": "_blank"})
+        if cve_id_prep is not None:
+            cve_id.append(cve_id_prep['href'].replace('translate.php?id=', ''))
+    for x in cve_rows:
+        cve_title_prep = x.find_all('a', href=True)
+        for x in cve_title_prep:
             if x.get_text() != '':
                 if x.get_text() != 'jp':
-                    acve2.append(x.get_text().replace('\xa0', ""))
-    else:
-        main = "The provided CVE does not match Qualys records."
-        print('ERROR: Unrecognized CVE')
-        return main
-    zipacve = zip(acve1, acve2)
-    acve = dict(zipacve)
-    cve_list.append('\n'.join("{} | {}".format(k, v) for k, v in acve.items()))
+                    cve_title.append(x.get_text().replace('\xa0', ""))
+    for x in cve_rows:
+        if x.find('img'):
+            cve_imp_prep = x.find_all('img')[1]
+            if cve_imp_prep.has_attr('valign'):
+                if cve_imp_prep['src'] == "../../images/icon_file_new.gif":
+                    cve_imp.append('QA-')
+                else:
+                    cve_imp.append('')
 
-    main = ''.join(cve_list)
+    cve_list = []
+    cve_list_prep = zip(cve_imp, cve_id, cve_title)
+    for x in cve_list_prep:
+        cve_list.append("{}{} | {}".format(*x))
+
+    main = '\n'.join(cve_list)
     return main
 
-
 def pullinfo():
-    qid = qidInput.get()
+    qid = qidInput.get().upper()
 
     # Clear old information from leftbook and rightbook
     vso_sigs.delete(1.0, END)
