@@ -187,7 +187,7 @@ def pullsigs(qid):
             list_func.append(x.get_text() + '\n' + "================================")
         else:
             removeescape = str(x).replace("\\\\", "\\")
-            list_sig.append(removeescape + '\n' + "================================")
+            list_sig.append(remove_tags(removeescape) + '\n' + "================================")
 
     sigs = '\n\n'.join(list_sig)
     funcs = '\n\n'.join(list_func)
