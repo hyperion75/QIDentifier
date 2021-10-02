@@ -120,20 +120,6 @@ def list_vs_versions():
         versionlist.append(x.get_text())
     return versionlist
 
-
-# Started work on a button to switch between QID/CVE search methods
-def searchmethod(x):
-    global sm
-    if x == 0:
-        switchbuttonx.config(text="CVE")
-        sm = 1
-        print("INFO: SearchMethod set to CVE.")
-    elif x == 1:
-        switchbuttonx.config(text="QID")
-        sm = 0
-        print("INFO: SearchMethod set to QID.")
-
-
 # 2 functions - Set the POD in keychain, then set the API login string in keychain.
 
 def storecredentials(username, password):
@@ -233,14 +219,13 @@ def pullsigs(qid):
     substring1 = "qlua_func"
     substring2 = "qlua_dfunc"
     for x in parsed:
-        # .find() doesn't support lists, I'll have to switch this around to use another method sometime.
         if str(x).find(substring1) != -1:
             list_func.append(x.get_text() + '\n' + "================================")
         elif str(x).find(substring2) != -1:
             list_func.append(x.get_text() + '\n' + "================================")
         else:
-            list_sig.append(x.get_text() + '\n' + "================================")
-    # sigs = '\n\n'.join(siglist)
+            removeescape = str(x).replace("\\\\", "\\")
+            list_sig.append(removeescape + '\n' + "================================")
 
     sigs = '\n\n'.join(list_sig)
     funcs = '\n\n'.join(list_func)
@@ -495,33 +480,40 @@ def pullcve(cve):
               'credentials are correct.')
 
     soup = BeautifulSoup(response.content, 'html.parser')
+    cve_rows = soup.find_all('tr')
 
-    cve_list = []
-    acve1 = []
-    acve2 = []
-    acve_prep1 = soup.find_all('a', {"target": "_blank"})
-    acve_prep2 = soup.find_all('a', href=True)
-    if len(acve_prep1) != 0:
-        for x in acve_prep1:
-            acve1.append(x['href'].replace('translate.php?id=', ''))
-        for x in acve_prep2:
+    cve_id = []
+    cve_title = []
+    cve_imp = []
+    for x in cve_rows:
+        cve_id_prep = x.find('a', {"target": "_blank"})
+        if cve_id_prep is not None:
+            cve_id.append(cve_id_prep['href'].replace('translate.php?id=', ''))
+    for x in cve_rows:
+        cve_title_prep = x.find_all('a', href=True)
+        for x in cve_title_prep:
             if x.get_text() != '':
                 if x.get_text() != 'jp':
-                    acve2.append(x.get_text().replace('\xa0', ""))
-    else:
-        main = "The provided CVE does not match Qualys records."
-        print('ERROR: Unrecognized CVE')
-        return main
-    zipacve = zip(acve1, acve2)
-    acve = dict(zipacve)
-    cve_list.append('\n'.join("{} | {}".format(k, v) for k, v in acve.items()))
+                    cve_title.append(x.get_text().replace('\xa0', ""))
+    for x in cve_rows:
+        if x.find('img'):
+            cve_imp_prep = x.find_all('img')[1]
+            if cve_imp_prep.has_attr('valign'):
+                if cve_imp_prep['src'] == "../../images/icon_file_new.gif":
+                    cve_imp.append('QA-')
+                else:
+                    cve_imp.append('')
 
-    main = ''.join(cve_list)
+    cve_list = []
+    cve_list_prep = zip(cve_imp, cve_id, cve_title)
+    for x in cve_list_prep:
+        cve_list.append("{}{} | {}".format(*x))
+
+    main = '\n'.join(cve_list)
     return main
 
-
 def pullinfo():
-    qid = qidInput.get()
+    qid = qidInput.get().upper()
 
     # Clear old information from leftbook and rightbook
     vso_sigs.delete(1.0, END)
