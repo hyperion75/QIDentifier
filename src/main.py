@@ -49,44 +49,6 @@ root.tk.call("set_theme", "light")
 # Required for checkbox functionality
 exclude_kb_on = BooleanVar()
 
-
-class HyperlinkManager:
-
-    def __init__(self, text):
-
-        self.text = text
-
-        self.text.tag_config("hyper", foreground="blue", underline=1)
-
-        self.text.tag_bind("hyper", "<Enter>", self._enter)
-        self.text.tag_bind("hyper", "<Leave>", self._leave)
-        self.text.tag_bind("hyper", "<Button-1>", self._click)
-
-        self.reset()
-
-    def reset(self):
-        self.links = {}
-
-    def add(self, action):
-        # add an action to the manager.  returns tags to use in
-        # associated text widget
-        tag = "hyper-%d" % len(self.links)
-        self.links[tag] = action
-        return "hyper", tag
-
-    def _enter(self, event):
-        self.text.config(cursor="pointinghand")
-
-    def _leave(self, event):
-        self.text.config(cursor="")
-
-    def _click(self, event):
-        for tag in self.text.tag_names(CURRENT):
-            if tag[:6] == "hyper-":
-                self.links[tag]()
-                return
-
-
 def closewindow(x):
     x.destroy()
 
@@ -489,6 +451,10 @@ def pullcve(cve):
         cve_id_prep = x.find('a', {"target": "_blank"})
         if cve_id_prep is not None:
             cve_id.append(cve_id_prep['href'].replace('translate.php?id=', ''))
+        else:
+            main = "The provided CVE does not match Qualys records."
+            print('ERROR: Unrecognized CVE')
+            return main
     for x in cve_rows:
         cve_title_prep = x.find_all('a', href=True)
         for x in cve_title_prep:
