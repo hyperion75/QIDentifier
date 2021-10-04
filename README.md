@@ -15,8 +15,8 @@ Before searching for QID information, there's a couple things to get set up:
 * Once finished, click 'Done'.
 
 ### Using QIDentifier:
-* It's super easy. Punch in a QID and hit "Go".
-* Alternatively, you can click the "QID" button next to the search bar to switch to CVE search mode. This will allow you to see a list of QIDs that include detection logic for the specified CVE.
+* It's super easy. Punch in a QID or CVE and click "Go".
+* Alternatively, you can type in a QID or CVE and click "Open in JIRA" to view all related JIRA records.
 
 
 ##### Some things to note:
