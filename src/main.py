@@ -235,8 +235,10 @@ def pullqid(qid):
             list_main.append("Vulnerability Type: Confirmed Vulnerability")
         elif q_vulntype['value'] == 'Practice':
             list_main.append("Vulnerability Type: Potential Vulnerability")
+        elif q_vulntype['value'] == 'Ig':
+            list_main.append("Vulnerability Type: Information Gathered")
         else:
-            print('ERROR: Unrecognized Vuln Type - ' + q_vulntype)
+            print('ERROR: Unrecognized Vuln Type - ' + str(q_vulntype))
             list_main.append("Vulnerability Type: Unknown Vuln Type")
 
     q_sev_prep = soup.find('select', {"name": "form[SEVERITY]"})
@@ -250,17 +252,18 @@ def pullqid(qid):
         list_main.append("CVSS3: " + q_cvss3['value'])
 
     q_pubstatus_prep = soup.find('select', {"name": "form[PUBLISHED]"})
-    if q_pubstatus_prep.has_attr('name'):
+    if q_pubstatus_prep is not None:
         q_pubstatus = q_pubstatus_prep.find("option", {'selected': True})
         q_pubdate = soup.find('input', {"name": "form[OLD_DATE_RELEASED]"})
-        list_main.append("Published: " + q_pubstatus['value'] + " - " + q_pubdate['value'])
+        if q_pubdate is not None:
+            list_main.append("Published: " + q_pubstatus['value'] + " - " + q_pubdate['value'])
 
     q_vendor = soup.find("input", {"name": "form[VENDOR][0]"})
-    if q_vendor.has_attr('value'):
+    if q_vendor is not None:
         list_main.append("Vendor: " + q_vendor['value'].capitalize())
 
     q_product = soup.find("input", {"name": "form[PRODUCT][0]"})
-    if q_product.has_attr('value'):
+    if q_product is not None:
         list_main.append("Product: " + q_product['value'].capitalize())
 
     q_auth = ['Supported Authentication:']
