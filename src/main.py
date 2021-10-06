@@ -461,7 +461,7 @@ def pullcve(cve):
                 if x.get_text() != 'jp':
                     cve_title.append(x.get_text().replace('\xa0', ""))
     for x in cve_rows:
-        if x.find('img'):
+        if len(x.find_all('img')) > 1:
             cve_imp_prep = x.find_all('img')[1]
             if cve_imp_prep.has_attr('valign'):
                 if cve_imp_prep['src'] == "../../images/icon_file_new.gif":
