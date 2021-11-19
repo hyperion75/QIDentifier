@@ -49,6 +49,7 @@ root.tk.call("set_theme", "light")
 # Required for checkbox functionality
 exclude_kb_on = BooleanVar()
 
+
 def closewindow(x):
     x.destroy()
 
@@ -84,6 +85,7 @@ def list_vs_versions():
 
 # 2 functions - Set the POD in keychain, then set the API login string in keychain.
 
+
 def storecredentials(username, password):
     username = username.get()
     password = password.get()
@@ -94,20 +96,20 @@ def storecredentials(username, password):
 
 # Popup window for POD Selection / API Login
 def settingspane():
-    settings = Toplevel(root)
-    settings.title("QIDentifier Settings")
-    settings.geometry("750x285")
-    settings.resizable(False, False)
-    centerwindow(settings)
+    settingsframe = Toplevel(root)
+    settingsframe.title("QIDentifier Settings")
+    settingsframe.geometry("750x285")
+    settingsframe.resizable(False, False)
+    centerwindow(settingsframe)
 
     # settings UI positioning
-    credentialframe = ttk.LabelFrame(settings, text="Corp Credentials", padding=(20, 10))
+    credentialframe = ttk.LabelFrame(settingsframe, text="Corp Credentials", padding=(20, 10))
     credentialframe.grid(row=1, column=1, padx=(20, 10), pady=(20, 10), sticky="nsew", rowspan=2)
-    vulnsigsframe = ttk.LabelFrame(settings, text="VULNSIGS Settings", padding=(20, 10))
+    vulnsigsframe = ttk.LabelFrame(settingsframe, text="VULNSIGS Settings", padding=(20, 10))
     vulnsigsframe.grid(row=1, column=2, padx=(20, 10), pady=(20, 10), sticky="n")
 
     # settings UI elements
-    closebutton = ttk.Button(settings, text="Done", width=10, command=lambda: closewindow(settings))
+    closebutton = ttk.Button(settingsframe, text="Done", width=10, command=lambda: closewindow(settingsframe))
     closebutton.grid(row=2, column=2, padx=(20, 10), pady=(20, 10), sticky="n")
 
     # login settings
@@ -156,9 +158,9 @@ def base64encoder():
 
 
 def pullsigs(qid):
-    vulnVersion = keyring.get_password("QIDentifier.VS_VER", "VS")
+    vuln_version = keyring.get_password("QIDentifier.VS_VER", "VS")
     url = "https://10.80.8.21/vuln/search"
-    payload = 'qid=' + str(qid) + '&vulnVersion=' + str(vulnVersion)
+    payload = 'qid=' + str(qid) + '&vulnVersion=' + str(vuln_version)
     headers = {
         'Connection': 'keep-alive',
         'Accept': '*/*',
@@ -422,7 +424,7 @@ def pullqid(qid):
     main = '\n\n'.join(list_main)
     detail = '\n\n'.join(list_detail)
     ref = '\n\n'.join(list_ref)
-    return (main, detail, ref)
+    return main, detail, ref
 
 
 def pullcve(cve):
@@ -456,10 +458,10 @@ def pullcve(cve):
             cve_id.append(cve_id_prep['href'].replace('translate.php?id=', ''))
     for x in cve_rows:
         cve_title_prep = x.find_all('a', href=True)
-        for x in cve_title_prep:
-            if x.get_text() != '':
-                if x.get_text() != 'jp':
-                    cve_title.append(x.get_text().replace('\xa0', ""))
+        for y in cve_title_prep:
+            if y.get_text() != '':
+                if y.get_text() != 'jp':
+                    cve_title.append(y.get_text().replace('\xa0', ""))
     for x in cve_rows:
         if len(x.find_all('img')) > 1:
             cve_imp_prep = x.find_all('img')[1]
@@ -481,6 +483,7 @@ def pullcve(cve):
     else:
         main = '\n'.join(cve_list)
         return main
+
 
 def pullinfo():
     qid = qidInput.get().upper()
@@ -510,7 +513,7 @@ def pullinfo():
             vso_funcs.insert(END, funcs)
     else:
         print('INFO: Pulling information for ' + qid)
-        #UI Adjustment
+        # UI Adjustment
         rightbook.tab(0, state='normal', text='Related QIDs')
         rightbook.tab(1, state='hidden')
         rightbook.tab(2, state='hidden')
@@ -518,13 +521,16 @@ def pullinfo():
         main = pullcve(qid)
         kbo_main.insert(END, main)
 
+
 def pulljira():
     qid = qidInput.get()
-    webbrowser.open_new_tab("https://jira.intranet.qualys.com/issues/?jql=summary+%7E+%22" + qid + "*%22+OR+description"
-                                                                                                   "+%7E+%22" + qid + "*%22+ORDER+BY+lastViewed+DESC")
+    webbrowser.open_new_tab("https://jira.intranet.qualys.com/issues/?jql=summary+%7E+%22" +
+                            qid + "*%22+OR+description+%7E+%22" + qid + "*%22+ORDER+BY+lastViewed+DESC")
 
 # Everything below this is UI position related
 # Top, Middle, Bottom, Footer frame definitions
+
+
 frame = Frame(root)
 frame.pack()
 topframe = Frame(root)
@@ -556,7 +562,8 @@ btn_JIRA.pack(side=LEFT)
 
 # vsTitle is set to global so that it's updated automatically when you change VULNSIGS version.
 global vsTitle
-if keyring.get_password("QIDentifier.VS_VER", "VS") == None:
+vsText = ''
+if keyring.get_password("QIDentifier.VS_VER", "VS") is None:
     vsText = "VulnSigs Sandbox: VERSION NOT CONFIGURED"
 elif keyring.get_password("QIDentifier.VS_VER", "VS") == '':
     vsText = "VulnSigs Sandbox: VERSION NOT CONFIGURED"
