@@ -49,6 +49,7 @@ root.tk.call("set_theme", "light")
 
 # Required for checkbox functionality
 exclude_kb_on = BooleanVar()
+debug_toggle = BooleanVar()
 
 
 def closewindow(x):
@@ -57,7 +58,8 @@ def closewindow(x):
 
 def set_vs_version(ver):
     version = ver.get()
-    print('INFO: Setting VulnSigs version to ' + version + '.')
+    if debug_toggle.get() == 1:
+        print('DEBUG: Setting VulnSigs version to ' + version + '.')
     vsTitle.config(text="VulnSigs Sandbox: " + version)
     global vs_ver
     vs_ver = version
@@ -74,7 +76,8 @@ def vs_version():
     }
     response = requests.request("GET", url, headers=headers, verify=False)
     if response.status_code == 200:
-        print('INFO: Successfully connected to VulnSigs Sandbox. Pulling version list. (https://10.80.8.21/)')
+        if debug_toggle.get() == 1:
+            print('DEBUG: Successfully connected to VulnSigs Sandbox. Pulling version list. (https://10.80.8.21/)')
     else:
         print('ERROR: Could not connect to VulnSigs Sandbox. Pulling version list. (https://10.80.8.21/)')
 
@@ -99,7 +102,8 @@ def storecredentials(username, password):
     password = password.get()
     keyring.set_password("QIDentifier.USER", "QIDer", username)
     keyring.set_password("QIDentifier.PASS", "QIDer", password)
-    print('INFO: Successfully stored credentials in keychain.')
+    if debug_toggle.get() == 1:
+        print('DEBUG: Successfully stored credentials in keychain.')
 
 
 # Popup window for POD Selection / API Login
@@ -114,14 +118,15 @@ def settingspane():
     credentialframe = ttk.LabelFrame(settingsframe, text="Corp Credentials", padding=(20, 10))
     credentialframe.grid(row=1, column=1, padx=(20, 10), pady=(20, 10), sticky="nsew", rowspan=2)
     vulnsigsframe = ttk.LabelFrame(settingsframe, text="VULNSIGS Settings", padding=(20, 10))
-    vulnsigsframe.grid(row=1, column=2, padx=(20, 10), pady=(20, 10), sticky="n")
+    vulnsigsframe.grid(row=1, column=2, padx=(20, 10), pady=(20, 10), sticky="n", columnspan=2)
+    togglesframe = ttk.LabelFrame(settingsframe, text="Additional Settings", padding=(20, 10))
+    togglesframe.grid(row=2, column=2, padx=(20, 10), pady=(20, 10), sticky="nw")
 
     # settings UI elements
     closebutton = ttk.Button(settingsframe, text="Done", width=10, command=lambda: closewindow(settingsframe))
-    closebutton.grid(row=2, column=2, padx=(20, 10), pady=(20, 10), sticky="n")
+    closebutton.grid(row=2, column=3, padx=(20, 10), pady=(20, 10), sticky="nsew")
 
     # login settings
-
     username_label = ttk.Label(credentialframe, text="Username:")
     username_label.grid(row=0, column=0, pady=15)
     username = StringVar()
@@ -149,6 +154,9 @@ def settingspane():
 
     vs_confirm = ttk.Button(vulnsigsframe, text="Set Version", width=12, command=lambda: set_vs_version(ver))
     vs_confirm.grid(row=2, column=1, pady=15)
+
+    debug = ttk.Checkbutton(togglesframe, text="Enable Debug Logging", variable=debug_toggle, style="Switch.TCheckbutton")
+    debug.grid(row=1, column=1)
 
 
 def remove_tags(text):
@@ -178,7 +186,8 @@ def pullsigs(qid):
     }
     response = requests.request("POST", url, headers=headers, data=payload, verify=False)
     if response.status_code == 200:
-        print('INFO: Successfully connected to VulnSigs Sandbox (' + vs_ver + ') (https://10.80.8.21/)')
+        if debug_toggle.get() == 1:
+            print('DEBUG: Successfully connected to VulnSigs Sandbox (' + vs_ver + ') (https://10.80.8.21/)')
     else:
         print('ERROR: Could not connect to VulnSigs Sandbox (https://10.80.8.21/)')
 
@@ -218,7 +227,8 @@ def pullqid(qid):
                                 "https://vuln.intranet.qualys.com:8443/main/qualysedit.php?id=" + qid + "&lang=en",
                                 headers=headers, data=payload, verify=False)
     if response.status_code == 200:
-        print('INFO: Successfully connected to VulnOffice (https://vuln.intranet.qualys.com:8443)')
+        if debug_toggle.get() == 1:
+            print('DEBUG: Successfully connected to VulnOffice (https://vuln.intranet.qualys.com:8443)')
     else:
         print('ERROR: Could not connect to VulnOffice (https://vuln.intranet.qualys.com:8443). Verify your corp '
               'credentials are correct.')
@@ -448,7 +458,8 @@ def pullcve(cve):
                                 "https://vuln.intranet.qualys.com:8443/main/index.php",
                                 headers=headers, data=payload, verify=False)
     if response.status_code == 200:
-        print('INFO: Successfully connected to VulnOffice (https://vuln.intranet.qualys.com:8443)')
+        if debug_toggle.get() == 1:
+            print('DEBUG: Successfully connected to VulnOffice (https://vuln.intranet.qualys.com:8443)')
     else:
         print('ERROR: Could not connect to VulnOffice (https://vuln.intranet.qualys.com:8443). Verify your corp '
               'credentials are correct.')
@@ -504,7 +515,8 @@ def pullinfo():
     # Display KB Information (if checkbox unchecked)
     if 'CVE' not in qid:
         if exclude_kb_on.get() == 0:
-            print('INFO: Pulling information for QID: ' + qid)
+            if debug_toggle.get() == 1:
+                print('DEBUG: Pulling information for QID: ' + qid)
             # UI Adjustment
             rightbook.tab(0, state='normal', text='General')
             rightbook.tab(1, state='normal')
@@ -519,7 +531,8 @@ def pullinfo():
             vso_sigs.insert(END, sigs)
             vso_funcs.insert(END, funcs)
     else:
-        print('INFO: Pulling information for ' + qid)
+        if debug_toggle.get() == 1:
+            print('DEBUG: Pulling information for ' + qid)
         # UI Adjustment
         rightbook.tab(0, state='normal', text='Related QIDs')
         rightbook.tab(1, state='hidden')
