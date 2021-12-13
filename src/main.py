@@ -11,6 +11,7 @@ import webbrowser
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 TAG_RE = re.compile(r'<[^>]+>')
+
 warnings.filterwarnings("ignore", message='Unverified HTTPS request is being made')
 
 # Useful for working directory troubleshooting:
@@ -56,12 +57,14 @@ def closewindow(x):
 
 def set_vs_version(ver):
     version = ver.get()
-    keyring.set_password("QIDentifier.VS_VER", "VS", version)
-    print('INFO: Setting VulnSigs version.')
+    print('INFO: Setting VulnSigs version to ' + version + '.')
     vsTitle.config(text="VulnSigs Sandbox: " + version)
+    global vs_ver
+    vs_ver = version
+    return vs_ver
 
 
-def list_vs_versions():
+def vs_version():
     url = "https://10.80.8.21/"
     headers = {
         'Connection': 'keep-alive',
@@ -71,17 +74,22 @@ def list_vs_versions():
     }
     response = requests.request("GET", url, headers=headers, verify=False)
     if response.status_code == 200:
-        print('INFO: Successfully connected to VulnSigs Sandbox (https://10.80.8.21/)')
+        print('INFO: Successfully connected to VulnSigs Sandbox. Pulling version list. (https://10.80.8.21/)')
     else:
-        print('ERROR: Could not connect to VulnSigs Sandbox (https://10.80.8.21/)')
+        print('ERROR: Could not connect to VulnSigs Sandbox. Pulling version list. (https://10.80.8.21/)')
 
     soup = BeautifulSoup(response.content, 'html.parser')
 
     parsed = list(soup.find_all('option'))
     versionlist = []
     for x in parsed:
-        versionlist.append(x.get_text())
+        if "test" not in x:
+            versionlist.append(x.get_text())
     return versionlist
+
+
+vs_ver = vs_version()[0]
+
 
 # 2 functions - Set the POD in keychain, then set the API login string in keychain.
 
@@ -133,7 +141,7 @@ def settingspane():
     instruction_label_vs = ttk.Label(vulnsigsframe, text="VULNSIGS Version:")
     instruction_label_vs.grid(row=0, column=0, pady=15, padx=10)
 
-    versiontuple = tuple(list_vs_versions())
+    versiontuple = tuple(vs_version())
     ver = StringVar()
     ver_entry = ttk.Combobox(vulnsigsframe, width=20, textvariable=ver)
     ver_entry['values'] = versiontuple
@@ -158,9 +166,8 @@ def base64encoder():
 
 
 def pullsigs(qid):
-    vuln_version = keyring.get_password("QIDentifier.VS_VER", "VS")
     url = "https://10.80.8.21/vuln/search"
-    payload = 'qid=' + str(qid) + '&vulnVersion=' + str(vuln_version)
+    payload = 'qid=' + str(qid) + '&vulnVersion=' + str(vs_ver)
     headers = {
         'Connection': 'keep-alive',
         'Accept': '*/*',
@@ -171,7 +178,7 @@ def pullsigs(qid):
     }
     response = requests.request("POST", url, headers=headers, data=payload, verify=False)
     if response.status_code == 200:
-        print('INFO: Successfully connected to VulnSigs Sandbox (https://10.80.8.21/)')
+        print('INFO: Successfully connected to VulnSigs Sandbox (' + vs_ver + ') (https://10.80.8.21/)')
     else:
         print('ERROR: Could not connect to VulnSigs Sandbox (https://10.80.8.21/)')
 
@@ -527,6 +534,7 @@ def pulljira():
     webbrowser.open_new_tab("https://jira.intranet.qualys.com/issues/?jql=summary+%7E+%22" +
                             qid + "*%22+OR+description+%7E+%22" + qid + "*%22+ORDER+BY+lastViewed+DESC")
 
+
 # Everything below this is UI position related
 # Top, Middle, Bottom, Footer frame definitions
 
@@ -562,13 +570,7 @@ btn_JIRA.pack(side=LEFT)
 
 # vsTitle is set to global so that it's updated automatically when you change VULNSIGS version.
 global vsTitle
-vsText = ''
-if keyring.get_password("QIDentifier.VS_VER", "VS") is None:
-    vsText = "VulnSigs Sandbox: VERSION NOT CONFIGURED"
-elif keyring.get_password("QIDentifier.VS_VER", "VS") == '':
-    vsText = "VulnSigs Sandbox: VERSION NOT CONFIGURED"
-elif keyring.get_password("QIDentifier.VS_VER", "VS") != "":
-    vsText = "VulnSigs Sandbox: " + keyring.get_password("QIDentifier.VS_VER", "VS")
+vsText = "VulnSigs Sandbox: " + vs_ver
 
 vsTitle = ttk.Label(midframe, text=vsText, font=arialbold)
 vsTitle.pack(side=LEFT, padx=5)
