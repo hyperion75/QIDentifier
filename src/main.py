@@ -51,6 +51,22 @@ root.tk.call("set_theme", "light")
 exclude_kb_on = BooleanVar()
 debug_toggle = BooleanVar()
 
+def make_rcm(w):
+    global rcm
+    rcm = Menu(w, tearoff=0)
+    rcm.add_command(label="Copy")
+    rcm.add_command(label="Paste")
+
+def show_rcm(e):
+    w = e.widget
+    rcm.entryconfigure("Copy",
+    command=lambda: w.event_generate("<<Copy>>"))
+    rcm.entryconfigure("Paste",
+    command=lambda: w.event_generate("<<Paste>>"))
+    rcm.tk.call("tk_popup", rcm, e.x_root, e.y_root)
+
+make_rcm(root)
+root.bind("<Button-2><ButtonRelease-2>", show_rcm)
 
 def closewindow(x):
     x.destroy()
