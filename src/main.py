@@ -1,3 +1,4 @@
+import tkinter
 from tkinter import *
 from tkinter import ttk
 import requests
@@ -51,22 +52,26 @@ root.tk.call("set_theme", "light")
 exclude_kb_on = BooleanVar()
 debug_toggle = BooleanVar()
 
+
 def make_rcm(w):
     global rcm
     rcm = Menu(w, tearoff=0)
     rcm.add_command(label="Copy")
     rcm.add_command(label="Paste")
 
+
 def show_rcm(e):
     w = e.widget
     rcm.entryconfigure("Copy",
-    command=lambda: w.event_generate("<<Copy>>"))
+                       command=lambda: w.event_generate("<<Copy>>"))
     rcm.entryconfigure("Paste",
-    command=lambda: w.event_generate("<<Paste>>"))
+                       command=lambda: w.event_generate("<<Paste>>"))
     rcm.tk.call("tk_popup", rcm, e.x_root, e.y_root)
+
 
 make_rcm(root)
 root.bind("<Button-2><ButtonRelease-2>", show_rcm)
+
 
 def closewindow(x):
     x.destroy()
@@ -171,8 +176,91 @@ def settingspane():
     vs_confirm = ttk.Button(vulnsigsframe, text="Set Version", width=12, command=lambda: set_vs_version(ver))
     vs_confirm.grid(row=2, column=1, pady=15)
 
-    debug = ttk.Checkbutton(togglesframe, text="Enable Debug Logging", variable=debug_toggle, style="Switch.TCheckbutton")
+    debug = ttk.Checkbutton(togglesframe, text="Enable Debug Logging", variable=debug_toggle,
+                            style="Switch.TCheckbutton")
     debug.grid(row=1, column=1)
+
+
+class SearchText(Text):
+    '''A text widget with a new method, highlight_pattern()
+
+    example:
+
+    text = CustomText()
+    text.tag_configure("red", foreground="#ff0000")
+    text.highlight_pattern("this should be red", "red")
+
+    The highlight_pattern method is a simplified python
+    version of the tcl code at http://wiki.tcl.tk/3246
+    '''
+
+    def __init__(self, *args, **kwargs):
+        Text.__init__(self, *args, **kwargs)
+
+    def highlight_pattern(self, pattern, tag, start="1.0", end="end",
+                          regexp=True):
+        '''Apply the given tag to all text that matches the given pattern
+
+        If 'regexp' is set to True, pattern will be treated as a regular
+        expression according to Tcl's regular expression syntax.
+        '''
+
+        start = self.index(start)
+        end = self.index(end)
+        self.mark_set("matchStart", start)
+        self.mark_set("matchEnd", start)
+        self.mark_set("searchLimit", end)
+
+        count = IntVar()
+        while True:
+            index = self.search(pattern, "matchEnd", "searchLimit",
+                                count=count, regexp=regexp)
+            if index == "": break
+            if count.get() == 0: break  # degenerate pattern which matches zero-length strings
+            self.mark_set("matchStart", index)
+            self.mark_set("matchEnd", "%s+%sc" % (index, count.get()))
+            self.tag_add(tag, "matchStart", "matchEnd")
+
+
+exp_entry = StringVar()
+test_entry = StringVar()
+
+
+def regex_check():
+    global exp_entry
+    global test_entry
+    exp_input = exp_entry.get("1.0", "end")
+    test_entry.tag_configure("red", foreground="#ff0000")
+    test_entry.highlight_pattern(exp_input.rstrip('\n'), "red")
+    return
+
+
+# Popup window for regex testing
+def regexpane():
+    global exp_entry
+    global test_entry
+    regexpane = Toplevel(root)
+    regexpane.title("Regex Tester")
+    regexpane.geometry("700x480")
+    regexpane.resizable(False, False)
+    regexpane.grid_rowconfigure(0, weight=1)
+    regexpane.grid_columnconfigure(0, weight=1)
+    centerwindow(regexpane)
+
+    exp_entry_frame = ttk.LabelFrame(regexpane, text="Expression", padding=(15, 5))
+    exp_entry_frame.grid(row=0, column=0, padx=15, sticky=NSEW)
+    exp_entry_frame.grid_rowconfigure(1, weight=1)
+    exp_entry_frame.grid_columnconfigure(1, weight=1)
+    exp_entry = SearchText(exp_entry_frame, height=10, width=50)
+    exp_entry.pack(expand=True, fill=BOTH)
+    test_entry_frame = ttk.LabelFrame(regexpane, text="Test String", padding=(15, 5))
+    test_entry_frame.grid(row=1, column=0, padx=15, sticky=NSEW)
+    test_entry_frame.grid_rowconfigure(1, weight=1)
+    test_entry_frame.grid_columnconfigure(1, weight=1)
+    test_entry = SearchText(test_entry_frame, height=10, width=50)
+    test_entry.pack(expand=True, fill=BOTH)
+    verify = ttk.Button(regexpane, text="Test", width=12, command=lambda: regex_check())
+    verify.grid(row=2, column=0, padx=15, pady=15)
 
 
 def remove_tags(text):
@@ -652,6 +740,9 @@ rb_tab_ref = ttk.Frame(rightbook)
 rightbook.add(rb_tab_ref, text="Reference", state='normal')
 kbo_ref = Text(rb_tab_ref, font=arial, wrap=WORD)
 kbo_ref.pack(expand=True, fill=BOTH)
+
+regex = ttk.Button(footerframe, text="Regex Tester", command=lambda: regexpane())
+regex.pack(side=LEFT)
 
 settings = ttk.Button(footerframe, text="Settings", command=lambda: settingspane())
 settings.pack(side=RIGHT)
