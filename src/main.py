@@ -212,11 +212,15 @@ class SearchText(Text):
         self.mark_set("searchLimit", end)
 
         count = IntVar()
+        global foundmatch
+        foundmatch = BooleanVar()
+        foundmatch = False
         while True:
             index = self.search(pattern, "matchEnd", "searchLimit",
                                 count=count, regexp=regexp)
             if index == "": break
             if count.get() == 0: break  # degenerate pattern which matches zero-length strings
+            foundmatch = True
             self.mark_set("matchStart", index)
             self.mark_set("matchEnd", "%s+%sc" % (index, count.get()))
             self.tag_add(tag, "matchStart", "matchEnd")
@@ -232,6 +236,10 @@ def regex_check():
     exp_input = exp_entry.get("1.0", "end")
     test_entry.tag_configure("red", foreground="#ff0000")
     test_entry.highlight_pattern(exp_input.rstrip('\n'), "red")
+    if foundmatch is True:
+        verifyexpbutton['text'] = "Match Found"
+    else:
+        verifyexpbutton['text'] = "No Match Found"
     return
 
 
@@ -239,6 +247,7 @@ def regex_check():
 def regexpane():
     global exp_entry
     global test_entry
+    global verifyexpbutton
     regexpane = Toplevel(root)
     regexpane.title("Regex Tester")
     regexpane.geometry("700x480")
@@ -259,8 +268,8 @@ def regexpane():
     test_entry_frame.grid_columnconfigure(1, weight=1)
     test_entry = SearchText(test_entry_frame, height=10, width=50)
     test_entry.pack(expand=True, fill=BOTH)
-    verify = ttk.Button(regexpane, text="Test", width=12, command=lambda: regex_check())
-    verify.grid(row=2, column=0, padx=15, pady=15)
+    verifyexpbutton = ttk.Button(regexpane, text="Test", width=12, command=lambda: regex_check())
+    verifyexpbutton.grid(row=2, column=0, padx=15, pady=15)
 
 
 def remove_tags(text):
