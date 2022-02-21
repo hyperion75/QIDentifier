@@ -2,3 +2,9 @@ bs4
 keyring
 lxml
 requests
+tkinter
+base64
+os
+re
+warnings
+webbrowser
