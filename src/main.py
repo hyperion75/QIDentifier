@@ -528,6 +528,8 @@ def pullqid(qid):
                     q_tid.append('* Exploit Kit')
                 if x['value'] == '16':
                     q_tid.append('* Ransomware')
+                if x['value'] == '18':
+                    q_tid.append('* CISA Known Exploitable')
 
     if q_tid == ['Threat Identifiers:']:
         list_detail.append('No Threat Identifiers')
