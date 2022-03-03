@@ -710,6 +710,7 @@ def pullcve(cve):
 
     soup = BeautifulSoup(response.content, 'html.parser')
     cve_rows = soup.find_all('tr')
+    print(cve_rows)
 
     cve_id = []
     cve_title = []
@@ -727,11 +728,16 @@ def pullcve(cve):
     for x in cve_rows:
         if len(x.find_all('img')) > 1:
             cve_imp_prep = x.find_all('img')[1]
-            if cve_imp_prep.has_attr('valign'):
-                if cve_imp_prep['src'] == "../../images/icon_file_new.gif":
-                    cve_imp.append('QA-')
-                else:
-                    cve_imp.append('')
+            print('cve_imp_prep')
+            print(cve_imp_prep)
+            print('cve_imp_prep_src')
+            print(cve_imp_prep['src'])
+            if cve_imp_prep['src'] in "../../images/icon_file_new.gif":
+                cve_imp.append('QA-')
+            if cve_imp_prep['src'] in "../../images/check_ico.gif":
+                cve_imp.append('')
+        else:
+            cve_imp.append('NA-')
 
     cve_list = []
     cve_list_prep = zip(cve_imp, cve_id, cve_title)
@@ -744,6 +750,12 @@ def pullcve(cve):
         return main
     else:
         main = '\n'.join(cve_list)
+        print('cve_id')
+        print(cve_id)
+        print('cve_title')
+        print(cve_title)
+        print('cve_imp')
+        print(cve_imp)
         return main
 
 
@@ -825,6 +837,7 @@ def pullinfo_pc():
         funclist.append(funcs + '\n')
         vso_sigs.insert(END, '\n\n'.join(siglist))
         vso_funcs.insert(END, '\n\n'.join(funclist))
+
 
 def pulljira():
     qid = qidInput.get()
