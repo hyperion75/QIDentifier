@@ -328,7 +328,6 @@ def pullsigs(qid):
 
 def pullqid(qid):
     auth = "Basic " + base64encoder()
-    # print(auth)
     payload = {}
     headers = {
         'X-Requested-With': 'QualysPostman',
@@ -561,7 +560,6 @@ def pullqid(qid):
 
 def pullcid(cid):
     auth = "Basic " + base64encoder()
-    # print(auth)
     payload = {}
     headers = {
         'X-Requested-With': 'QualysPostman',
@@ -716,7 +714,6 @@ def pullcve(cve):
 
     soup = BeautifulSoup(response.content, 'html.parser')
     cve_rows = soup.find_all('tr')
-    print(cve_rows)
 
     cve_id = []
     cve_title = []
@@ -734,10 +731,6 @@ def pullcve(cve):
     for x in cve_rows:
         if len(x.find_all('img')) > 1:
             cve_imp_prep = x.find_all('img')[1]
-            print('cve_imp_prep')
-            print(cve_imp_prep)
-            print('cve_imp_prep_src')
-            print(cve_imp_prep['src'])
             if cve_imp_prep['src'] in "../../images/icon_file_new.gif":
                 cve_imp.append('QA-')
             if cve_imp_prep['src'] in "../../images/check_ico.gif":
@@ -756,12 +749,6 @@ def pullcve(cve):
         return main
     else:
         main = '\n'.join(cve_list)
-        print('cve_id')
-        print(cve_id)
-        print('cve_title')
-        print(cve_title)
-        print('cve_imp')
-        print(cve_imp)
         return main
 
 
