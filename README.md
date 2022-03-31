@@ -9,10 +9,10 @@ A tool for pulling QID/DPID information from Qualys sources
 ### Getting Started:
 Before searching for QID/DPID information, there's a couple things to get set up:
 * Click 'Settings' in the bottom right corner of the screen.
+
 * Input your Qualys Corp Credentials and click 'Set Credentials'.
   * These are encrypted and stored in the system keychain so that they do not need to be set every launch.
   * These credentials are used to access VulnSigs Sandbox and VulnOffice for QID/DPID information.
-
 
 ## Vulnerability Management (VM) Mode
 
