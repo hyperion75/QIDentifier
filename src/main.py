@@ -1,3 +1,4 @@
+import tkinter
 from tkinter import *
 from tkinter import ttk
 import requests
@@ -48,8 +49,28 @@ root.tk.call("source", "sun-valley.tcl")
 root.tk.call("set_theme", "light")
 
 # Required for checkbox functionality
-exclude_kb_on = BooleanVar()
+pc_enabled = BooleanVar()
 debug_toggle = BooleanVar()
+
+
+def make_rcm(w):
+    global rcm
+    rcm = Menu(w, tearoff=0)
+    rcm.add_command(label="Copy")
+    rcm.add_command(label="Paste")
+
+
+def show_rcm(e):
+    w = e.widget
+    rcm.entryconfigure("Copy",
+                       command=lambda: w.event_generate("<<Copy>>"))
+    rcm.entryconfigure("Paste",
+                       command=lambda: w.event_generate("<<Paste>>"))
+    rcm.tk.call("tk_popup", rcm, e.x_root, e.y_root)
+
+
+make_rcm(root)
+root.bind("<Button-2><ButtonRelease-2>", show_rcm)
 
 
 def closewindow(x):
@@ -155,8 +176,100 @@ def settingspane():
     vs_confirm = ttk.Button(vulnsigsframe, text="Set Version", width=12, command=lambda: set_vs_version(ver))
     vs_confirm.grid(row=2, column=1, pady=15)
 
-    debug = ttk.Checkbutton(togglesframe, text="Enable Debug Logging", variable=debug_toggle, style="Switch.TCheckbutton")
+    debug = ttk.Checkbutton(togglesframe, text="Enable Debug Logging", variable=debug_toggle,
+                            style="Switch.TCheckbutton")
     debug.grid(row=1, column=1)
+
+
+class SearchText(Text):
+    '''A text widget with a new method, highlight_pattern()
+
+    example:
+
+    text = CustomText()
+    text.tag_configure("red", foreground="#ff0000")
+    text.highlight_pattern("this should be red", "red")
+
+    The highlight_pattern method is a simplified python
+    version of the tcl code at http://wiki.tcl.tk/3246
+    '''
+
+    def __init__(self, *args, **kwargs):
+        Text.__init__(self, *args, **kwargs)
+
+    def highlight_pattern(self, pattern, tag, start="1.0", end="end",
+                          regexp=True):
+        '''Apply the given tag to all text that matches the given pattern
+
+        If 'regexp' is set to True, pattern will be treated as a regular
+        expression according to Tcl's regular expression syntax.
+        '''
+
+        start = self.index(start)
+        end = self.index(end)
+        self.mark_set("matchStart", start)
+        self.mark_set("matchEnd", start)
+        self.mark_set("searchLimit", end)
+
+        count = IntVar()
+        global foundmatch
+        foundmatch = BooleanVar()
+        foundmatch = False
+        while True:
+            index = self.search(pattern, "matchEnd", "searchLimit",
+                                count=count, regexp=regexp)
+            if index == "": break
+            if count.get() == 0: break  # degenerate pattern which matches zero-length strings
+            foundmatch = True
+            self.mark_set("matchStart", index)
+            self.mark_set("matchEnd", "%s+%sc" % (index, count.get()))
+            self.tag_add(tag, "matchStart", "matchEnd")
+
+
+exp_entry = StringVar()
+test_entry = StringVar()
+
+
+def regex_check():
+    global exp_entry
+    global test_entry
+    exp_input = exp_entry.get("1.0", "end")
+    test_entry.tag_configure("red", foreground="#ff0000")
+    test_entry.highlight_pattern(exp_input.rstrip('\n'), "red")
+    if foundmatch is True:
+        verifyexpbutton['text'] = "Match Found"
+    else:
+        verifyexpbutton['text'] = "No Match Found"
+    return
+
+
+# Popup window for regex testing
+def regexpane():
+    global exp_entry
+    global test_entry
+    global verifyexpbutton
+    regexpane = Toplevel(root)
+    regexpane.title("Regex Tester")
+    regexpane.geometry("700x480")
+    regexpane.resizable(False, False)
+    regexpane.grid_rowconfigure(0, weight=1)
+    regexpane.grid_columnconfigure(0, weight=1)
+    centerwindow(regexpane)
+
+    exp_entry_frame = ttk.LabelFrame(regexpane, text="Expression", padding=(15, 5))
+    exp_entry_frame.grid(row=0, column=0, padx=15, sticky=NSEW)
+    exp_entry_frame.grid_rowconfigure(1, weight=1)
+    exp_entry_frame.grid_columnconfigure(1, weight=1)
+    exp_entry = SearchText(exp_entry_frame, height=10, width=50)
+    exp_entry.pack(expand=True, fill=BOTH)
+    test_entry_frame = ttk.LabelFrame(regexpane, text="Test String", padding=(15, 5))
+    test_entry_frame.grid(row=1, column=0, padx=15, sticky=NSEW)
+    test_entry_frame.grid_rowconfigure(1, weight=1)
+    test_entry_frame.grid_columnconfigure(1, weight=1)
+    test_entry = SearchText(test_entry_frame, height=10, width=50)
+    test_entry.pack(expand=True, fill=BOTH)
+    verifyexpbutton = ttk.Button(regexpane, text="Test", width=12, command=lambda: regex_check())
+    verifyexpbutton.grid(row=2, column=0, padx=15, pady=15)
 
 
 def remove_tags(text):
@@ -415,6 +528,8 @@ def pullqid(qid):
                     q_tid.append('* Exploit Kit')
                 if x['value'] == '16':
                     q_tid.append('* Ransomware')
+                if x['value'] == '18':
+                    q_tid.append('* CISA Known Exploitable')
 
     if q_tid == ['Threat Identifiers:']:
         list_detail.append('No Threat Identifiers')
@@ -444,6 +559,141 @@ def pullqid(qid):
     return main, detail, ref
 
 
+def pullcid(cid):
+    auth = "Basic " + base64encoder()
+    # print(auth)
+    payload = {}
+    headers = {
+        'X-Requested-With': 'QualysPostman',
+        'Authorization': auth,
+
+    }
+
+    response = requests.request("GET",
+                                "https://vuln.intranet.qualys.com:8443/main/control_edit_withoutextjs.php?cid=" + cid + "&lang=en",
+                                headers=headers, data=payload, verify=False)
+    if response.status_code == 200:
+        if debug_toggle.get() == 1:
+            print('DEBUG: Successfully connected to VulnOffice (https://vuln.intranet.qualys.com:8443)')
+    else:
+        print('ERROR: Could not connect to VulnOffice (https://vuln.intranet.qualys.com:8443). Verify your corp '
+              'credentials are correct.')
+
+    soup = BeautifulSoup(response.content, 'html.parser')
+
+    list_main = []
+    list_detail = []
+    list_ref = ['test_ref']
+
+    c_name = soup.find('textarea', {"name": "form[CONTROL_STATEMENT]"})
+    if c_name.text != '':
+        list_main.append("Title: " + c_name.text)
+
+    c_crit_prep = soup.find('select', {"name": "form[CONTROL_CRITICALITY]"})
+    if c_crit_prep is not None:
+        c_crit = c_crit_prep.find("option", {'selected': True})
+        list_main.append("Criticality: " + c_crit.text)
+
+    c_cat_prep = soup.find('select', {"name": "form[CONTROL_CATEGORY]"})
+    if c_cat_prep is not None:
+        c_cat = c_cat_prep.find("option", {'selected': True})
+        list_main.append("Category: " + c_cat.text)
+
+    c_subcat_prep = soup.find('select', {"name": "form[CONTROL_SUBCATEGORY]"})
+    if c_subcat_prep is not None:
+        c_subcat = c_subcat_prep.find("option", {'selected': True})
+        list_main.append("Subcategory: " + c_subcat.text)
+
+    c_tech_names = []
+    c_alltech = soup.find_all('div', id=re.compile("^sc\d"))
+
+    for x in c_alltech:
+        if x['id'] not in ['sc1', 'sc2', 'sc3']:
+            c_techprep = x.find('b')
+            if c_techprep.parent.name == 'td':
+                if c_techprep.text != ' Add Technology...':
+                    c_tech_names.append(c_techprep.text)
+
+    c_details_rationale = []
+    c_tech_count = 3
+    for x in c_alltech:
+        if x['id'] not in ['sc1', 'sc2', 'sc3']:
+            c_tech_count += 1
+            c_techprep = x.find('textarea', id='form[CONTROL_TECHNOLOGY_RATIONALE' + str(c_tech_count) + "_1]")
+            if c_techprep.text != '':
+                c_details_rationale.append(c_techprep.text)
+            else:
+                c_details_rationale.append('')
+
+    c_details_remediation = []
+    c_tech_count = 3
+    for x in c_alltech:
+        if x['id'] not in ['sc1', 'sc2', 'sc3']:
+            c_tech_count += 1
+            c_techprep = x.find('textarea', id='form[CONTROL_TECHNOLOGY_REMEDIATION' + str(c_tech_count) + "_1]")
+            if c_techprep.text != '':
+                c_details_remediation.append(c_techprep.text)
+            else:
+                c_details_remediation.append('')
+
+    c_details_comments = []
+    c_tech_count = 3
+    for x in c_alltech:
+        if x['id'] not in ['sc1', 'sc2', 'sc3']:
+            c_tech_count += 1
+            c_techprep = x.find('textarea', id='form[CONTROL_TECHNOLOGY_COMMENTS' + str(c_tech_count) + "_1]")
+            if c_techprep.text != '':
+                c_details_comments.append(c_techprep.text)
+            else:
+                c_details_comments.append('')
+
+    c_details_created = []
+    for x in c_alltech:
+        if x['id'] not in ['sc1', 'sc2', 'sc3']:
+            createDate_prep = x.find('td', class_='title', text='Create Date:')
+            createDate = createDate_prep.find_next_sibling('td').find('input')
+            c_details_created.append('Created: ' + createDate['value'])
+
+    c_details_updated = []
+    for x in c_alltech:
+        if x['id'] not in ['sc1', 'sc2', 'sc3']:
+            updateDate_prep = x.find('td', class_='title', text='Update Date:')
+            updateDate = updateDate_prep.find_next_sibling('td').find('input')
+            c_details_updated.append('Updated: ' + updateDate['value'])
+
+    c_details_dpids = []
+    for x in c_alltech:
+        if x['id'] not in ['sc1', 'sc2', 'sc3']:
+            dpid_prep = x.find('td', class_='title', text='Data Point ID:')
+            dpid = dpid_prep.find_next_sibling('td').find('a')
+            if dpid is not None:
+                c_details_dpids.append(dpid.text)
+
+    dpids_final = []
+    [dpids_final.append(x) for x in c_details_dpids if x not in dpids_final]
+
+    detailCount = 0
+    for x in c_tech_names:
+        list_detail.append(c_tech_names[detailCount] + "\n===============\n" +
+                           'Control DPID: ' + c_details_dpids[detailCount] + '\n' +
+                           c_details_created[detailCount] + '\n' +
+                           c_details_updated[detailCount] + "\n\n" +
+                           c_details_rationale[detailCount] + '\n\n' +
+                           c_details_remediation[detailCount] + '\n\n' +
+                           c_details_comments[detailCount])
+        detailCount += 1
+
+    if not c_tech_names:
+        list_main.append('No Supported Technologies')
+    else:
+        list_main.append('Supported Technologies:\n' + '\n'.join(c_tech_names))
+
+    main = '\n\n'.join(list_main)
+    detail = '\n\n'.join(list_detail)
+    ref = '\n\n'.join(list_ref)
+    return main, detail, ref, dpids_final
+
+
 def pullcve(cve):
     auth = "Basic " + base64encoder()
     payload = 'search=' + cve + '&type=CVE&src=QUALYS&lang=en'
@@ -466,6 +716,7 @@ def pullcve(cve):
 
     soup = BeautifulSoup(response.content, 'html.parser')
     cve_rows = soup.find_all('tr')
+    print(cve_rows)
 
     cve_id = []
     cve_title = []
@@ -483,11 +734,16 @@ def pullcve(cve):
     for x in cve_rows:
         if len(x.find_all('img')) > 1:
             cve_imp_prep = x.find_all('img')[1]
-            if cve_imp_prep.has_attr('valign'):
-                if cve_imp_prep['src'] == "../../images/icon_file_new.gif":
-                    cve_imp.append('QA-')
-                else:
-                    cve_imp.append('')
+            print('cve_imp_prep')
+            print(cve_imp_prep)
+            print('cve_imp_prep_src')
+            print(cve_imp_prep['src'])
+            if cve_imp_prep['src'] in "../../images/icon_file_new.gif":
+                cve_imp.append('QA-')
+            if cve_imp_prep['src'] in "../../images/check_ico.gif":
+                cve_imp.append('')
+        else:
+            cve_imp.append('NA-')
 
     cve_list = []
     cve_list_prep = zip(cve_imp, cve_id, cve_title)
@@ -500,10 +756,25 @@ def pullcve(cve):
         return main
     else:
         main = '\n'.join(cve_list)
+        print('cve_id')
+        print(cve_id)
+        print('cve_title')
+        print(cve_title)
+        print('cve_imp')
+        print(cve_imp)
         return main
 
 
 def pullinfo():
+    if debug_toggle.get() == 1:
+        print("DEBUG: PC Enabled - " + str(pc_enabled.get()))
+    if pc_enabled.get() is False:
+        pullinfo_vm()
+    if pc_enabled.get() is True:
+        pullinfo_pc()
+
+
+def pullinfo_vm():
     qid = qidInput.get().upper()
 
     # Clear old information from leftbook and rightbook
@@ -514,22 +785,21 @@ def pullinfo():
 
     # Display KB Information (if checkbox unchecked)
     if 'CVE' not in qid:
-        if exclude_kb_on.get() == 0:
-            if debug_toggle.get() == 1:
-                print('DEBUG: Pulling information for QID: ' + qid)
-            # UI Adjustment
-            rightbook.tab(0, state='normal', text='General')
-            rightbook.tab(1, state='normal')
-            rightbook.tab(2, state='normal')
-            # pulls tab data to rightbook
-            main, detail, ref = pullqid(qid)
-            kbo_main.insert(END, main)
-            kbo_detail.insert(END, detail)
-            kbo_ref.insert(END, ref)
-            # pulls tab data to leftbook
-            sigs, funcs = pullsigs(qid)
-            vso_sigs.insert(END, sigs)
-            vso_funcs.insert(END, funcs)
+        if debug_toggle.get() == 1:
+            print('DEBUG: Pulling information for QID: ' + qid)
+        # UI Adjustment
+        rightbook.tab(0, state='normal', text='General')
+        rightbook.tab(1, state='normal', text='Detail')
+        rightbook.tab(2, state='normal', text='Reference')
+        # pulls tab data to rightbook
+        main, detail, ref = pullqid(qid)
+        kbo_main.insert(END, main)
+        kbo_detail.insert(END, detail)
+        kbo_ref.insert(END, ref)
+        # pulls tab data to leftbook
+        sigs, funcs = pullsigs(qid)
+        vso_sigs.insert(END, sigs)
+        vso_funcs.insert(END, funcs)
     else:
         if debug_toggle.get() == 1:
             print('DEBUG: Pulling information for ' + qid)
@@ -542,10 +812,50 @@ def pullinfo():
         kbo_main.insert(END, main)
 
 
+def pullinfo_pc():
+    cid = qidInput.get().upper()
+
+    # Clear old information from leftbook and rightbook
+    vso_sigs.delete(1.0, END)
+    kbo_main.delete(1.0, END)
+    kbo_detail.delete(1.0, END)
+    kbo_ref.delete(1.0, END)
+
+    # Display KB Information (if checkbox unchecked)
+    if debug_toggle.get() == 1:
+        print('DEBUG: Pulling information for CID: ' + cid)
+    # UI Adjustment
+    rightbook.tab(0, state='normal', text='General')
+    rightbook.tab(1, state='normal', text='Detail')
+    rightbook.tab(2, state='hidden')
+    # rightbook.tab(2, state='hidden')
+    # pulls tab data to rightbook
+    main, detail, ref, dpids_final = pullcid(cid)
+    kbo_main.insert(END, main)
+    kbo_detail.insert(END, detail)
+    kbo_ref.insert(END, ref)
+    # pulls tab data to leftbook
+    for dpid in dpids_final:
+        siglist = ["Control DPID: " + dpid]
+        funclist = ["Control DPID: " + dpid]
+        sigs, funcs = pullsigs(dpid)
+        siglist.append(sigs + '\n')
+        funclist.append(funcs + '\n')
+        vso_sigs.insert(END, '\n\n'.join(siglist))
+        vso_funcs.insert(END, '\n\n'.join(funclist))
+
+
 def pulljira():
     qid = qidInput.get()
     webbrowser.open_new_tab("https://jira.intranet.qualys.com/issues/?jql=summary+%7E+%22" +
                             qid + "*%22+OR+description+%7E+%22" + qid + "*%22+ORDER+BY+lastViewed+DESC")
+
+
+def enable_pc():
+    if pc_enabled.get() is True:
+        label_search['text'] = "CID:"
+    else:
+        label_search['text'] = "QID / CVE:"
 
 
 # Everything below this is UI position related
@@ -569,6 +879,7 @@ arialbold = ("Arial", 12, "bold")
 arial = ("Arial", 12)
 
 # UI Elements
+global label_search
 label_search = ttk.Label(topframe, text="QID / CVE:", font=arialheader)
 label_search.pack(side=LEFT, padx=10)
 
@@ -637,11 +948,15 @@ rightbook.add(rb_tab_ref, text="Reference", state='normal')
 kbo_ref = Text(rb_tab_ref, font=arial, wrap=WORD)
 kbo_ref.pack(expand=True, fill=BOTH)
 
+regex = ttk.Button(footerframe, text="Regex Tester", command=lambda: regexpane())
+regex.pack(side=LEFT)
+
 settings = ttk.Button(footerframe, text="Settings", command=lambda: settingspane())
 settings.pack(side=RIGHT)
 
-exclude_kb = ttk.Checkbutton(footerframe, text="Exclude KB Info", variable=exclude_kb_on, style="Switch.TCheckbutton")
-exclude_kb.pack(side=RIGHT)
+pc_toggle = ttk.Checkbutton(topframe, text="PC Mode", variable=pc_enabled, style="Switch.TCheckbutton",
+                            command=lambda: enable_pc())
+pc_toggle.pack(side=RIGHT)
 
 # Execute Tkinter
 root.mainloop()
