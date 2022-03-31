@@ -622,6 +622,8 @@ def pullcid(cid):
             c_techprep = x.find('textarea', id='form[CONTROL_TECHNOLOGY_RATIONALE' + str(c_tech_count) + "_1]")
             if c_techprep.text != '':
                 c_details_rationale.append(c_techprep.text)
+            else:
+                c_details_rationale.append('')
 
     c_details_remediation = []
     c_tech_count = 3
@@ -631,6 +633,8 @@ def pullcid(cid):
             c_techprep = x.find('textarea', id='form[CONTROL_TECHNOLOGY_REMEDIATION' + str(c_tech_count) + "_1]")
             if c_techprep.text != '':
                 c_details_remediation.append(c_techprep.text)
+            else:
+                c_details_remediation.append('')
 
     c_details_comments = []
     c_tech_count = 3
@@ -640,6 +644,8 @@ def pullcid(cid):
             c_techprep = x.find('textarea', id='form[CONTROL_TECHNOLOGY_COMMENTS' + str(c_tech_count) + "_1]")
             if c_techprep.text != '':
                 c_details_comments.append(c_techprep.text)
+            else:
+                c_details_comments.append('')
 
     c_details_created = []
     for x in c_alltech:
