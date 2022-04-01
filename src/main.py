@@ -50,6 +50,7 @@ root.tk.call("set_theme", "light")
 
 # Required for checkbox functionality
 pc_enabled = BooleanVar()
+dm_enabled = BooleanVar()
 debug_toggle = BooleanVar()
 
 
@@ -844,6 +845,12 @@ def enable_pc():
     else:
         label_search['text'] = "QID / CVE:"
 
+def enable_dm():
+    if dm_enabled.get() is True:
+        root.tk.call("set_theme", "dark")
+    else:
+        root.tk.call("set_theme", "light")
+
 
 # Everything below this is UI position related
 # Top, Middle, Bottom, Footer frame definitions
@@ -884,10 +891,10 @@ global vsTitle
 vsText = "VulnSigs Sandbox: " + vs_ver
 
 vsTitle = ttk.Label(midframe, text=vsText, font=arialbold)
-vsTitle.pack(side=LEFT, padx=5)
+vsTitle.pack(side=LEFT, padx=10)
 
 kbTitle = ttk.Label(midframe, text="Qualys Knowledgebase", font=arialbold)
-kbTitle.pack(side=RIGHT, padx=5)
+kbTitle.pack(side=RIGHT, padx=10)
 
 # define the VS Signatures Notebook
 leftbook = ttk.Notebook(bottomframe)
@@ -941,9 +948,13 @@ regex.pack(side=LEFT)
 settings = ttk.Button(footerframe, text="Settings", command=lambda: settingspane())
 settings.pack(side=RIGHT)
 
-pc_toggle = ttk.Checkbutton(topframe, text="PC Mode", variable=pc_enabled, style="Switch.TCheckbutton",
+pc_toggle = ttk.Checkbutton(topframe, text="CID Search", variable=pc_enabled, style="Switch.TCheckbutton",
                             command=lambda: enable_pc())
-pc_toggle.pack(side=RIGHT)
+pc_toggle.pack(side=RIGHT, padx=10)
+
+dm_toggle = ttk.Checkbutton(footerframe, text="Dark Mode", variable=dm_enabled, style="Switch.TCheckbutton",
+                            command=lambda: enable_dm())
+dm_toggle.pack(side=RIGHT, padx=10)
 
 # Execute Tkinter
 root.mainloop()
