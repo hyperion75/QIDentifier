@@ -2,7 +2,7 @@
 A tool for pulling QID/DPID information from Qualys sources
 
 ### Prerequisites:
-* Install Python 3 (https://www.python.org/downloads/)
+* Install Python 3.9+ (https://www.python.org/downloads/)
 * Open the 'QIDentifier' folder in a CLI, run "pip install -r requirements.txt"
 * Run the application from 'src/main.py'
 
