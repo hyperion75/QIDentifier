@@ -489,6 +489,10 @@ def pullqid(qid):
     if q_solution.get_text() != "":
         list_detail.append(remove_tags('Solution:' + '\n' + q_solution.get_text()))
 
+    q_workaround = soup.find('textarea', {"name": "form[WORKAROUND]"})
+    if q_workaround.get_text() != "":
+        list_detail.append(remove_tags('Workaround:' + '\n' + q_workaround.get_text()))
+
     q_tid = ['Threat Identifiers:']
     q_tid_prep = soup.find_all('input', {'id': re.compile('threat_intel_id.*')})
     for x in q_tid_prep:
